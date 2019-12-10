@@ -7,8 +7,8 @@ Camera traps is a valuable tool for wildlife research, but what is its potential
 
 ## Objective
 
-1) Systematic search of CT publications in different sources. Report spatial and temporal trends in the frequency of conservation related terms in abstract/keywords
-2) For a selection (random sample, cross validate) of publications with full text, analyse whether study measures status, trend, threats or response to action.
+1) Systematic search of CT publications in different sources. Report spatial and temporal trends in the frequency of conservation related terms in abstract/keywords. Ada can do this, compare results with previous reviews
+2) For a selection (random sample, cross validate) of publications with full text, analyse whether study measures status, trend, threats or response to action. We will split the documents and each can contribute to revision, we can use [hypothes.is](https://web.hypothes.is/) to add the tags to the documents, and then use the API to summarize the data.
 
 ## Documents
 Previous version of reviews
