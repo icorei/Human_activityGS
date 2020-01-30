@@ -16,7 +16,7 @@ raw.result$status_code
 this.raw.content <- rawToChar(raw.result$content)
 this.content <- fromJSON(this.raw.content)
 
-##Group ID: IUCN RLE: "N2gaGJDg"
+  ##Group ID: IUCN RLE: "N2gaGJDg"
 ## camera trap review group=g6LBbZpQ
 
 
