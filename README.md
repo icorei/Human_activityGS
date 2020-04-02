@@ -19,10 +19,17 @@ There are different direct and indirect pathways that can link camera trap data 
 
 For conservation practitioners camera traps are a tool with a broad spectrum of applications.
 
+## Repository structure
 
-## Documents
-Previous version of reviews
+### *documents* folder
+
+Contains previous version of reviews:
+
 * Quo vadis camera trap research? A 50-year review of camera trap research goals and outcomes (Stachowicz 2016)
 * Camera traps in wildlife ecology: a review (Diment 2010)
 
+Also some aditional figures and tables
 
+### *R* folder
+
+Contains code (R scripts) for analysis and output figures in pdf
