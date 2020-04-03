@@ -12,7 +12,7 @@ Camera traps is a valuable tool for wildlife research, but what is its potential
 
 ## Outline
 
-Camera traps are a powerful tool for wildlife research as they allow to collect evidence of species presence, abundance and behavior in time. Data camera traps can play an important role in conservation projects, but this remains unquantified. Here we combine bibliometric analysis and narrative review to a) describe the advances and drawbacks in the uptake of camera trap data in conservation across time, regions, and taxonomic groups, b) measure the frequency of camera trap research associated with different steps in conservation planning process, and c) highlight good examples of the application of camera trap data to inform conservation action. 
+Camera traps are a powerful tool for wildlife research as they allow to collect evidence of species presence, abundance and behavior in time. Data camera traps can play an important role in conservation projects, but this remains unquantified. Here we combine bibliometric analysis and narrative review to a) describe the advances and drawbacks in the uptake of camera trap data in conservation across time, regions, and taxonomic groups, b) measure the frequency of camera trap research associated with different steps in conservation planning process, and c) highlight good examples of the application of camera trap data to inform conservation action.
 Fig: grow in references and cites through time, lines for several subjects (mechanical improvements, method development, etc) annotate important milestones (automatic trigger, digital cameras, image recognition, databases, etc).
 
 There are different direct and indirect pathways that can link camera trap data to the different steps in conservation planning. The literature search only highlights a subset of the direct pathways, as these papers tend to focus on the role of the camera traps and research questions rather than conservation actions. Review of action plans for selected species/programs allowed us to identify a broader set of pathways, where the role of camera trap is not always addressed explicitly.
@@ -33,3 +33,6 @@ Also some aditional figures and tables
 ### *R* folder
 
 Contains code (R scripts) for analysis and output figures in pdf
+
+#### References
+Aria, M. & Cuccurullo, C. (2017) bibliometrix: An R-tool for comprehensive science mapping analysis, Journal of Informetrics, 11(4), pp 959-975, Elsevier.
