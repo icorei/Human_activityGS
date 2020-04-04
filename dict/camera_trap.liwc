@@ -1,0 +1,24 @@
+%
+01 Protected_Areas
+02 Large_Mammals
+03 Density_Estimation
+04 Occupancy_model
+%
+
+nation_park       01
+protect_area      01
+
+large_carnivor    02
+large_mammal      02
+red_fox           02
+larg_mammal       02
+larg_carnivor     02
+snow_leopard      02
+wild_boar         02
+
+densiti_estim     03
+popul_densiti     03
+estim_densiti     03
+
+detect_probabl    04
+occup_model       04
