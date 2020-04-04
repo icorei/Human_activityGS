@@ -37,10 +37,16 @@ Unify similar concepts using a thesaurus
 #Commun format for text analysis. A DTM is a matrix in which rows are
 #documents, columns are terms, and cells indicate how often
 #each term occurred in each document.
+
 ## Step 3: THEME ANALYSIS FOR CAMERA TRAPS PAPERS
 
 
 Now,apply Natural Language Processing and Topic Modeling to abstracts to identify the topics published in conservation planning
+LDA model: #Now we'll use topic modeling to clasiffy the articles
+#But first we need determine what is the optimal number of topics
+#we should specify in the LDA model
+#Package ldatuning realizes 4 metrics to select perfect number of topics for LDA model.
+
 
 
 ## Step 4: NETWORK ANALYSIS

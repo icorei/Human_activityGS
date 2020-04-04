@@ -1,24 +1,188 @@
 %
-01 Protected_Areas
-02 Large_Mammals
-03 Density_Estimation
-04 Occupancy_model
+010 Behaviour
+020 Home_Range
+030 Population
+031 Density_Estimation
+032 Occupancy_model
+033 secr_model
+034 Distribution
+040 Community
+041 Biotic_interactions
+042 Predator_prey
+043 Diversity
+
+100 Habitat
+110 Forest
+120 Habitat_suitability
+130 Palm_plantation
+
+200 Human_impact
+210 Fragmentation
+220 Bio_Invasions
+230 Climate_Change
+
+300 Conservation
+310 Protected_Areas
+320 Conservation_plan
+330 Species_status
+
+600 Taxa_Groups
+610 Mammals
+620 Large_Mammals
+630 Small_Mammals
+640 Birds
+
 %
 
-nation_park       01
-protect_area      01
+activ_pattern     010
+nocturn_activ     010
+activ_day         010
+diel_activ        010
+daili_activ       010
+tempor_activ      010
+diurnal_activ     010
 
-large_carnivor    02
-large_mammal      02
-red_fox           02
-larg_mammal       02
-larg_carnivor     02
-snow_leopard      02
-wild_boar         02
+home_rang         020
 
-densiti_estim     03
-popul_densiti     03
-estim_densiti     03
+densiti_estim     031
+abund_densiti     031
+popul_densiti     031
+estim_densiti     031
+estim_abund       031
+popul_estim       030
+popul_dynam       030
+speci_abund       031
+relat_abund       031
+popul_size        030
+estim_popul       030
+abund_estim       031
+abund_speci       031
 
-detect_probabl    04
-occup_model       04
+occup_probabl     032
+probabl_detect    032
+detect_probabl    032
+occup_model       032
+occup_detect      032
+site_occup        032
+speci_detect      032
+detect_rate       032
+captur_probabl    032
+
+explicit_capturerecaptur 033
+spatial_explicit  033
+spatial_capturerecaptur 033
+capturerecaptur_model 033
+scr_model         033
+secr_model        033
+
+spatial_distribut 034
+speci_distribut   034
+record_speci      034
+speci_record      034
+
+mammal_communiti  040
+seed_remov        041
+seed_dispers      041
+food_resourc      041
+predat_prey       041 042
+potenti_prey      041 042
+speci_interact    041
+predat_risk       041 042
+speci_rich        043
+prey_speci        041 042
+nest_predat       041 042
+seed_predat       041 042
+apex_predat       041 042
+
+speci_composit    043
+
+habitat_type      100
+
+forest_area       110
+forest_fragment   110
+forest_habitat    110
+forest_cover      110
+primari_forest    110
+rain_forest       110
+continu_forest    110
+forest_manag      110
+forest_patch      110
+dri_forest        110
+secondari_forest  110
+forest_remnant    110
+forest_landscap   110
+forest_type       110
+tropic_forest     110
+
+
+suitabl_habitat   120
+habitat_suitabl   120
+habitat_prefer    100
+habitat_select    100
+
+oil_palm          130
+palm_plantat      130
+
+fragment_landscap 210
+loss_fragment     210
+habitat_fragment  210
+
+invas_speci       220
+
+climat_chang      230
+
+anthropogen_disturb 200
+human_presenc       200
+human_impact        200
+humandomin_landscap 200
+human_activ         200
+human_disturb       200
+human_popul         200
+human_settlement    200
+urban_area          200
+
+effect_conserv    300
+conserv_effort    300
+biodivers_conserv 300
+
+nation_park       310
+protect_area      310
+conserv_area      310
+biospher_reserv   310
+wildlif_sanctuari 310
+natur_reserv      310
+forest_reserv     310
+
+wildlif_conserv   300
+
+manag_conserv     320
+manag_decis       320
+conserv_strategi  320
+conserv_plan      320
+manag_strategi    320
+conserv_action    320
+monitor_program   320
+conserv_manag     320
+wildlif_manag     320
+speci_conserv     320
+
+conserv_valu      330
+endang_speci      330
+iucn_red          330
+critic_endang     330
+conserv_concern   330
+threaten_speci    330
+
+mammal_speci      610
+terrestri_mammal  610
+large_carnivor    042
+large_mammal      610 620
+larg_mammal       610 620
+larg_carnivor     042
+small_mammal      610 630
+carnivor_speci    042
+small_carnivor    042
+bird_speci        640
+carnivor_communiti  042
+mammal_bird       640 610
+bird_mammal       640 610

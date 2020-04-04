@@ -1,8 +1,6 @@
 setwd("~/Documentos/Publicaciones/Camera-trap Review/the-big-picture/R/bibliometric-analysis")
 data.dir <- "~/Documentos/Publicaciones/Camera-trap Review/the-big-picture/documents/ISI-20191211"
 require(lubridate)
-library(tidytext)
-library(tidyr)
 library(stringr)
 library(caret)
 library(sna)
@@ -10,7 +8,7 @@ library(igraph)
 library(ggplot2)
 library(plyr)
 library(scales)
-
+library(tidyr)
 
 
   ######

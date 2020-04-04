@@ -79,55 +79,59 @@ head(ISI.camera.toks[[3]], 5)
 ISI.camera.bigram <- tokens_ngrams(ISI.camera.toks, n=2) #for bigram
 head(ISI.camera.bigram[[1]], 10) #show the first 10 bigram
 
+exclude.words <- read.table(file=sprintf("%s/dict/exclude.txt",script.dir),as.is=T)$V1
+species.words <- read.table(file=sprintf("%s/dict/species_terms.txt",script.dir),as.is=T)$V1
+
+ISI.camera.bigram <- tokens_select(ISI.camera.bigram, exclude.words, selection = 'remove')
+
+
+# Dictionay of related terms in LIWC format
+camera_thesaurus <- dictionary(file = sprintf("%s/dict/camera_trap.liwc",script.dir), format = "LIWC")
+
 
 
 ## Word list to be reviewed by @icorei
 word.list <- table(unlist(ISI.camera.bigram))
-## we compress this using gzip
+## most common words
+write.csv(file=sprintf("%s/dict/common_wordlist.csv",script.dir), rev(sort(word.list[word.list>20])))
+
+write.csv(file=sprintf("%s/dict/common_not_in_dictionary_wordlist.csv",script.dir), rev(sort(word.list[word.list>20 & !(names(word.list) %in% unlist(camera_thesaurus@.Data))& !(names(word.list) %in% species.words)])))
+
+
+## (almost) all words, we compress this using gzip
 zz <- gzfile(sprintf("%s/dict/wordlist.csv.gz",script.dir), "w")
 write.csv(file=zz,rev(sort(word.list[word.list>1])))
 close(zz)
 
 
-# compressed file
-     cat("TITLE extra line", "2 3 5 7", "", "11 13 17", file = zz, sep = "\n")
-     close(zz)
-     readLines(zz <- gzfile(zzfil))
-     close(zz)
-     unlink(zzfil)
-
-write.csv(file=sprintf("%s/dict/wordlist.csv",script.dir),rev(sort(word.list[word.list>1])))
-
-# Read dictionay of related terms
-camera_thesaurus <- dictionary(file = sprintf("%s/dict/camera_trap.liwc",script.dir), format = "LIWC")
 
 #Create DTM (Document Term Matrix).
 
-my_dfm <- dfm(ISI.camera.bigram, thesaurus = camera_thesaurus)
-my_dfm
+ISI.camera.dfm <- dfm(ISI.camera.bigram, thesaurus = camera_thesaurus)
+ISI.camera.dfm
 #Document-feature matrix of: 2,415 documents, 179,972 features (99.9% sparse).
 #There are too much features
 #Lets simplify it by
 #create a new dfm to include words that have appeared at least 25 times in the corpus.
-new_dfm <- dfm_trim(my_dfm, min_termfreq = 50)
+ISI.camera.dfm <- dfm_trim(ISI.camera.dfm, min_termfreq = 50)
 #2,415 documents, 567 features
 #Better
 #create a feature co-occurrence matrix
-new_fcm <- fcm(new_dfm)
+ISI.camera.fcm <- fcm(ISI.camera.dfm)
 
 #extract top 50 keywords based on abstracts and create a feature co-occurrence matrix
 #based on the top 50
-feat <- names(topfeatures(new_fcm, 50))
-new_fcm <- fcm_select(new_fcm, feat)
+feat <- names(topfeatures(ISI.camera.fcm, 50))
+ISI.camera.fcm <- fcm_select(ISI.camera.fcm, feat)
 
-size <- log(colSums(dfm_select(new_dfm, feat)))
-textplot_network(new_fcm, min_freq = 0.5, vertex_size = size/max(size) * 3)
+size <- log(colSums(dfm_select(ISI.camera.dfm, feat)))
+textplot_network(ISI.camera.fcm, min_freq = 0.5, vertex_size = size/max(size) * 3)
 
-topfeatures(my_dfm, 10)
+topfeatures(ISI.camera.dfm, 10)
 
 #Plot top keywords and produce a wordcloud of top keywords.
-freq <- textstat_frequency(new_dfm, n = 50)
-new_dfm %>%
+freq <- textstat_frequency(ISI.camera.dfm, n = 50)
+ISI.camera.dfm %>%
   textstat_frequency(n = 20) %>%
   ggplot(aes(x = reorder(feature, frequency), y = frequency)) +
   geom_point() +
@@ -135,11 +139,11 @@ new_dfm %>%
   labs(x = NULL, y = "Frequency") +
   theme_minimal()
 
-textplot_wordcloud(new_dfm, max_words = 100,
+textplot_wordcloud(ISI.camera.dfm, max_words = 100,
                    random.order=FALSE, rot.per=0.35,
                    colors=brewer.pal(8, "Dark2"))
 
 ## save to a Rdata object:
-#save(file=sprintf("%s/???.rda",Rdata.dir),...)
+save(file=sprintf("%s/ISI-camera-corpus.rda",Rdata.dir), ISI.camera.corpus, ISI.camera.bigram, ISI.camera.dfm, ISI.camera.fcm)
 
 ## That's it!, we are ready for the next step.

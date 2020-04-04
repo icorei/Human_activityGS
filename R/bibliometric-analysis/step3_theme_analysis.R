@@ -1,46 +1,65 @@
+#! R --vanilla
+
+## Load required packages
+library(bibliometrix) #the library for bibliometrics
+require(topicmodels) #for topic modeling
+library(quanteda) #a library for quantitative text analysis
+require(ggplot2) #visualization
+library(dplyr) #for data munging
+library("RColorBrewer") # user friendly color palettes
+library(tidytext)
+
+## Set up working environment (customize accordingly...)
+## FOR ADA:
+script.dir <- "~/Documentos/Publicaciones/Camera-trap Review/the-big-picture"
+## FOR JR:
+script.dir <- "~/proyectos/IVIC/the-big-picture"
+
+work.dir <- sprintf("%s/R/bibliometric-analysis", script.dir)
+Rdata.dir <- sprintf("%s/Rdata", script.dir)
+
+setwd(work.dir)
+
+## Load data from previous step:
+load(file=sprintf("%s/ISI-camera-corpus.rda",Rdata.dir))
 
 ######
 # THEME ANALYSIS FOR CAMERA TRAPS PAPERS
 ######
 
-#Now,apply Natural Language Processing and Topic Modeling to abstracts
-#to identify the topics published in conservation planning
 
 #LDA model
-#Now we'll use topic modeling to clasiffy the articles
-#But first we need determine what is the optimal number of topics
-#we should specify in the LDA model
-#Package ldatuning realizes 4 metrics to select perfect number of topics for LDA model.
-dtm <- convert(new_dfm, to = "topicmodels")
 
-#library("ldatuning")
-#result <- FindTopicsNumber(
-# dtm,
-#topics = seq(from = 2, to = 15, by = 1),
-#metrics = c("CaoJuan2009"),
-#method = "Gibbs",
-#control = list(seed = 77),
-#mc.cores = 2L,
-#verbose = TRUE
-#)
+ISI.camera.dtm <- convert(ISI.camera.dfm, to = "topicmodels")
+
+library("ldatuning")
+result <- FindTopicsNumber(
+ISI.camera.dtm,
+topics = seq(from = 7, to = 37, by = 3),
+metrics = c("CaoJuan2009"),
+method = "Gibbs",
+control = list(seed = 77),
+mc.cores = 2L,
+verbose = TRUE
+)
 
 #Now, we can fit our LDA model
-lda <- LDA(dtm, control=list(seed=0), k = 10) # set the number of topics to 10.
-terms(lda, 20) #show top 10 words pertaining to each topic
+ISI.camera.lda <- LDA(ISI.camera.dtm, control=list(seed=0), k = 10) # set the number of topics to 10.
+terms(ISI.camera.lda, 20) #show top 10 words pertaining to each topic
 
 #Obtain the most likely topics for each document
-docvars(new_dfm, 'topic') <- topics(lda)
-head(topics(lda), 5) #show topic allocation for the first docucments
+docvars(ISI.camera.dfm, 'topic') <- topics(ISI.camera.lda)
+head(topics(ISI.camera.lda), 5) #show topic allocation for the first docucments
 
 #lists the document to (primary) topic assignments:
-my.rslt <- topics(lda)
+my.rslt <- topics(ISI.camera.lda)
 table(my.rslt)
 #    1   2   3   4   5   6   7   8   9  10
 # 191 299 289 181 225 229 221 232 183 135
 
 #The tidytext package provides this method for extracting the per-topic-per-word
 #probabilities, called  β(“beta”), from the model.
-ap_topics <- tidy(lda, matrix = "beta")
+ap_topics <- tidy(ISI.camera.lda, matrix = "beta")
 ap_topics
 
 #Now we can build the tidy data frame for the keywords.
@@ -63,8 +82,8 @@ scale_x_reordered()
 
 as.data.frame(ap_top_terms)
 #Dendogram to evaluate how similar are the topics
-str(lda)
-my.model <- lda@beta
+str(ISI.camera.lda)
+my.model <- ISI.camera.lda@beta
 distance_matrix <- dist(my.model, method="euclidean")
 plot(hclust(distance_matrix), cex = 1)
 
@@ -73,7 +92,7 @@ plot(hclust(distance_matrix), cex = 1)
 #LDA also models each document as a mixture of topics
 #We can examine the per-document-per-topic probabilities, called
 #γ (“gamma”), with the matrix = "gamma" argument to tidy()
-lda_gamma <- tidy(lda, matrix = "gamma")
+lda_gamma <- tidy(ISI.camera.lda, matrix = "gamma")
 lda_gamma
 
 #How are the probabilities distributed? Let’s visualize them
@@ -340,3 +359,10 @@ M3$topic_10 <- 0
     #can be interpreted as having higher- than-average numbers of articles written
   #about them in the period. Similarly, topics with positive random slopes
   #have higher-than-average growth in publications during the same period.
+
+
+
+  ## save to a Rdata object:
+#  save(file=sprintf("%s/....rda",Rdata.dir), ...)
+
+  ## That's it!, we are ready for the next step.
