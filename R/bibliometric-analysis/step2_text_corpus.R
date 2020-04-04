@@ -1,18 +1,37 @@
+#! R --vanilla
+
+## Load required packages
+library(bibliometrix) #the library for bibliometrics
+require(topicmodels) #for topic modeling
+library(quanteda) #a library for quantitative text analysis
+require(ggplot2) #visualization
+library(dplyr) #for data munging
+library("RColorBrewer") # user friendly color palettes
+
+## Set up working environment (customize accordingly...)
+## FOR ADA:
+script.dir <- "~/Documentos/Publicaciones/Camera-trap Review/the-big-picture"
+## FOR JR:
+script.dir <- "~/proyectos/IVIC/the-big-picture"
+
+work.dir <- sprintf("%s/R/bibliometric-analysis", script.dir)
+Rdata.dir <- sprintf("%s/Rdata", script.dir)
+
+setwd(work.dir)
+
+## Load data from previous step:
+load(file=sprintf("%s/ISI-20191211.rda",Rdata.dir))
+
+
 #Lets exclude all "review" type studies
-table (my.data$DT)
+table (ISI.search.df$DT)
 
 # # filters:
 # * exclude reviews and
 # * include all from camera trap search
 
-M2 <- subset(my.data, !grepl("REVIEW",DT) & my.topic %in% "cameratrap")
+M2 <- subset(ISI.search.df, !grepl("REVIEW",DT) & my.topic %in% "cameratrap")
 
-#Choose only "review" articles
-tmp001 <- M[grep("REVIEW", M$DT), ]
-dim(tmp001)
-#93 43
-#Now delete this subset from the original data frame
-M2<- M[!(M$DT %in% tmp001$DT),]
 dim(M2)
 #2415   43
 
@@ -22,7 +41,14 @@ txt1 <- M2[,c("UT","AB", "my.topic")] #take two columns from the dataframe N2.
 #Column UT is for Unique Article Identifier, and column AB is for abstracts.
 #txt1$UT <- tolower(txt1$TI)
 #convert to lower case
+
 txt1$AB <- tolower(txt1$AB)
+
+## remove copyright text
+txt1$AB <- gsub("\\(c\\) [0-9 A-Za-z.-]+","",txt1$AB)
+## remove some mathematical notation
+txt1$AB <- gsub("-|\\+|<|_|=|`","",txt1$AB)
+
 txt1$my.topic <- tolower(txt1$my.topic)
 
 #Create a corpus in which each abstract is a document
@@ -31,6 +57,8 @@ txt1_corpus <- corpus(txt1, docid_field = "UT", text_field = "AB")
 
 txt1_corpus #txt1_corpus is the name of the corpus created.
 head(docvars(txt1_corpus))
+
+
 #Tokenization (lexical analysis)
 #Tokenization is the process of splitting a text into tokens
 #(i.e. convert the text into smaller, more
@@ -48,26 +76,24 @@ nostop_toks <- tokens_select(nostop_toks, c("abstract", "study","the", "therefor
 
 head(nostop_toks[[3]], 5)
 #Simplify words to avoid confussion with deriv and plural terms
-nostop_toks <- tokens_wordstem(nostop_toks,
-                               language = quanteda_options("language_stemmer"))
+nostop_toks <- tokens_wordstem(nostop_toks, language = quanteda_options("language_stemmer"))
 head(nostop_toks[[3]], 5)
+
 #"fragment" "natur"    "environ"  "import"   "threat"
 #Create n-gram. (tokens in sequence)
 nostop_toks<- tokens_ngrams(nostop_toks, n=2) #for bigram
 head(nostop_toks[[1]], 10) #show the first 10 bigram
-nostop_toks <- tokens_select(nostop_toks, c("c_deutsch", "saugetierkund_publish",
-                                            "c_ltd", "publish_gmbh", "gmbh_right",
-                                            "ltd_right"),
-                             selection = 'remove')
+nostop_toks <- tokens_select(nostop_toks, c("c_deutsch", "saugetierkund_publish", "c_ltd", "publish_gmbh", "gmbh_right", "ltd_right"), selection = 'remove')
 
 ## This section will be reviewed by Izza!
+head(rev(sort(table(unlist(nostop_toks)))),100)
 
 #Unify similar concepts
 my_thesaurus1 <- dictionary(list(protect_area = c("nation_park", "protect_area"),
-                                 large_mammals = c("large_carnivor", "large_mammal", "red_fox", "larg_mammal", "larg_carnivor",
-                                                   "snow_leopard", "wild_boar"),
-                                 densiti_estim = c("densiti_estim", "popul_densiti", "popul_densiti", "estim_densiti"),
-                                 occup_model = c("detect_probabl", "occup_model")))
+ large_mammals = c("large_carnivor", "large_mammal", "red_fox", "larg_mammal", "larg_carnivor",
+                   "snow_leopard", "wild_boar"),
+ densiti_estim = c("densiti_estim", "popul_densiti", "popul_densiti", "estim_densiti"),
+ occup_model = c("detect_probabl", "occup_model")))
 
 
 #Create DTM (Document Term Matrix).
@@ -109,3 +135,8 @@ new_dfm %>%
 textplot_wordcloud(new_dfm, max_words = 100,
                    random.order=FALSE, rot.per=0.35,
                    colors=brewer.pal(8, "Dark2"))
+
+## save to a Rdata object:
+#save(file=sprintf("%s/???.rda",Rdata.dir),...)
+
+## That's it!, we are ready for the next step.
