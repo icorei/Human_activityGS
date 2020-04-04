@@ -29,8 +29,14 @@ Tokenization (lexical analysis): Tokenization is the process of splitting a text
 
 There are many ways to tokenize text (by sentence, by word, or by line). For our data, we tokenize by words. Notice that we remove punctuation and numbers along the way.
 
-#Create DTM (Document Term Matrix).
+Create n-gram. (tokens in sequence)
+Unify similar concepts using a thesaurus
 
+
+#Create DTM (Document Term Matrix).
+#Commun format for text analysis. A DTM is a matrix in which rows are
+#documents, columns are terms, and cells indicate how often
+#each term occurred in each document.
 ## Step 3: THEME ANALYSIS FOR CAMERA TRAPS PAPERS
 
 
