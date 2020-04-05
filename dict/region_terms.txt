@@ -7,3 +7,6 @@ south_america
 costa_rica
 malaysian_borneo
 southeastern_brazil
+sao_paulo
+sabah_malaysian
+peninsular_malaysia

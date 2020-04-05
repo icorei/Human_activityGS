@@ -1,5 +1,10 @@
-# annoying MAC OSX files
+# annoying MAC OSX and temporary Office files
 .DS_Store
+~$*
+
+# do not save logs and other files created by pandoc/latex
+*.log
+*.tex
 
 # History files
 .Rhistory

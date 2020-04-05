@@ -1,6 +1,6 @@
 # Instructions for *dict* (dictionaries) folder
 
-This folder includes files that are used in the text-analysis to either exclude words and phrases or to combine related terms into broader concepts.
+This folder includes files that are used in the lexical analysis to either exclude words and phrases or to combine related terms into broader concepts.
 
 ## File formats
 
