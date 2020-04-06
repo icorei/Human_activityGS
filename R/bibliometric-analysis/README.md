@@ -30,6 +30,10 @@ In the script [step2_text_corpus.R](step2_text_corpus.R) a couple of **R** libra
 ```R
 ## FOR ADA:
 Rscript --vanilla R/bibliometric-analysis/step2_text_corpus.R ~/Documentos/Publicaciones/Camera-trap Review/the-big-picture ISI-20191211 cameratrap
+##target.dir<-"ISI-20191211"
+##target.grp <- "cameratrap"
+##script.dir<-"~/Documentos/Publicaciones/Sanchez-Mercado_Camera-trapReview/the-big-picture"
+
 
 ## FOR JR:
 Rscript --vanilla R/bibliometric-analysis/step2_text_corpus.R ~/proyectos/IVIC/the-big-picture ISI-20191211 cameratrap
