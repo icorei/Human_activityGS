@@ -162,8 +162,8 @@ head(topics(ISI.camera.lda), 5)
 
 lists the document to (primary) topic assignments:
 ```{r primary topic}
-my.rslt <- topics(ISI.camera.lda)
-table(my.rslt)
+prd.topic <- topics(ISI.camera.lda)
+table(prd.topic)
 ```
 
 The *tidytext* package provides this method for extracting the per-topic-per-word probabilities, called  β(“beta”), from the model.
@@ -260,9 +260,9 @@ We can use this information to decide how many topics for our topic modeling pro
 Convert to a data frame
 
 ```{r topic df}
-my.rslt <- as.data.frame(as.table(my.rslt))
-colnames(my.rslt)<- c("UT", "lda_topic")
-str(my.rslt)
+prd.topic <- as.data.frame(as.table(prd.topic))
+colnames(prd.topic)<- c("UT", "lda_topic")
+str(prd.topic)
 ```
 
 Now get back to the complete collection of literature review
@@ -270,7 +270,8 @@ and combine it
 
 
 ```{r merge}
-M3 <- merge(subset(ISI.search.df,search.group %in% "cameratrap"), my.rslt, by = "UT", all.x = T)
+ISI.topic.df <- merge(ISI.search.df, prd.topic, by = "UT", all.x = T)
+M3 <- subset(ISI.topic.df,search.group %in% "cameratrap")
 M3$topic <- ifelse(is.na(M3$lda_topic),99,M3$lda_topic)
 
 summary(M3$lda_topic)
@@ -287,15 +288,16 @@ Lets see the first approach
 
 ```{r temporal trend 1}
 (yrange <- range(M3$PY,na.rm=T))
+M3$period <- cut(M3$PY,c(1990,2005,2010,2012,2014,2016,2018,2021))
 
-dts <- with(M3,tapply(UT,list(year=PY,topic=topic), length))
+dts <- with(M3,tapply(UT,list(year=period,topic=topic), length))
 dts[is.na(dts)] <- 0
  mosaicplot(dts,col=1:15)
 ```
 
 We can check the standardized residuals of the contingency table:
 
-```{r temporal trend 1}
+```{r temporal trend mosaic}
 
 mosaicplot(as.table(dts[,1:14]), shade = TRUE)
 ```
@@ -303,6 +305,9 @@ mosaicplot(as.table(dts[,1:14]), shade = TRUE)
 Or relative frequencies (This graphs is difficult to interpret)
 
 ```{r temporal trend 2}
+
+dts <- with(M3,tapply(UT,list(year=PY,topic=topic), length))
+dts[is.na(dts)] <- 0
 
  mtz <- apply(t(apply(dts,1,function(x) x/sum(x))),1,cumsum)
 
