@@ -1,4 +1,4 @@
----
+cameratrap.---
 title: "Theme analysis for camera trap publications"
 author: "Ada Y. Sánchez-Mercado and José R. Ferrer Paris"
 date: 2020-04-03
@@ -50,14 +50,22 @@ summary(object=results_M,k=20,pause=FALSE)
 Create DTM (Document Term Matrix). Common format for text analysis. A DTM is a matrix in which rows are documents, columns are terms, and cells indicate how often each term occurred in each document.
 
 ```{r basic dfm}
-ISI.camera.dfm <- dfm(ISI.camera.bigram, thesaurus = camera_thesaurus)
-ISI.camera.dfm
+cameratrap.dfm <- dfm(cameratrap.bigram, thesaurus = camera_thesaurus)
+cameratrap.dfm
+consplan.dfm <- dfm(consplan.bigram, thesaurus = camera_thesaurus)
+consplan.dfm
+
 ```
+> From the help page of *dfm*:
+>dictionary: a dictionary object to apply to the tokens when creating  the dfm
+>thesaurus: a dictionary object that will be applied as if ‘exclusive = FALSE’. See also ‘tokens_lookup()’.  For more fine-grained control over this and other aspects of converting features into dictionary/thesaurus keys from pattern matches to values, consider creating the dfm first, and then applying ‘dfm_lookup()’ separately, or using ‘tokens_lookup()’ on the tokenized text before calling ‘dfm’.
+
 
 There are too many features. Lets simplify it by trimming the dfm to include words that have appeared at least 20 times in the corpus.
 
 ```{r trimmed dfm}
-ISI.camera.dfm <- dfm_trim(ISI.camera.dfm, min_termfreq = 20)
+cameratrap.dfm <- dfm_trim(cameratrap.dfm, min_termfreq = 20)
+consplan.dfm <- dfm_trim(consplan.dfm, min_termfreq = 20)
 ```
 
 Better?
@@ -65,29 +73,30 @@ Better?
 # Feature co-occurrence matrix
 
 ```{r fcm full}
-ISI.camera.fcm <- fcm(ISI.camera.dfm)
+cameratrap.fcm <- fcm(cameratrap.dfm)
+consplan.fcm <- fcm(consplan.dfm)
 ```
 Extract top 50 keywords based on abstracts and create a feature co-occurrence matrix based on the top 50.
 
 ```{r fcm top50}
-topfeatures(ISI.camera.fcm, 50)
-feat <- names(topfeatures(ISI.camera.fcm, 50))
-ISI.camera.fcm <- fcm_select(ISI.camera.fcm, feat)
+topfeatures(cameratrap.fcm, 50)
+feat <- names(topfeatures(cameratrap.fcm, 50))
+cameratrap.fcm <- fcm_select(cameratrap.fcm, feat)
 ```
 
 
 We could use this to plot the network, but this step takes time, we are skipping this for now.
 ```{r fcm plot,eval=FALSE}
-size <- log(colSums(dfm_select(ISI.camera.dfm, feat)))
+size <- log(colSums(dfm_select(cameratrap.dfm, feat)))
 
-textplot_network(ISI.camera.fcm, min_freq = 0.5, vertex_size = size/max(size) * 3)
+textplot_network(cameratrap.fcm, min_freq = 0.5, vertex_size = size/max(size) * 3)
 ```
 
 Plot top keywords frequencies instead:
 
 ```{r kwd plot}
-freq <- textstat_frequency(ISI.camera.dfm, n = 50)
-ISI.camera.dfm %>%
+freq <- textstat_frequency(cameratrap.dfm, n = 50)
+cameratrap.dfm %>%
 textstat_frequency(n = 20) %>%
 ggplot(aes(x = reorder(feature, frequency), y = frequency)) +
 geom_point() +
@@ -100,7 +109,7 @@ Also plot a word cloud (but note that some words are excluded due to their size)
 
 ```{r wordcloud}
 
-textplot_wordcloud(ISI.camera.dfm, max_words = 100,
+textplot_wordcloud(cameratrap.dfm, max_words = 100,
   random.order=FALSE, rot.per=0.35,
   colors=brewer.pal(8, "Dark2"))
 ```
@@ -111,7 +120,8 @@ Now,apply Natural Language Processing and Topic Modeling to abstracts to identif
 We transform the DFM to DTM
 
 ```{r dtm}
-ISI.camera.dtm <- convert(ISI.camera.dfm, to = "topicmodels")
+cameratrap.dtm <- convert(cameratrap.dfm, to = "topicmodels")
+consplan.dtm <- convert(consplan.dfm, to = "topicmodels")
 ```
 
 Now we need determine what is the optimal number of topics we should specify in the LDA model
@@ -121,7 +131,7 @@ Package ldatuning realizes 4 metrics to select perfect number of topics for LDA 
 ```{r optimal topic number}
 if (!exists("result")) {
   result <- FindTopicsNumber(
-    ISI.camera.dtm,
+    cameratrap.dtm,
     topics = c(5:15,seq(from = 16, to = 61, by = 5)),
     metrics = c("CaoJuan2009"),
     method = "Gibbs",
@@ -140,36 +150,38 @@ We will set the number of terms to 14
 Now, we can fit our first LDA model
 
 ```{r lda}
-ISI.camera.lda <- LDA(ISI.camera.dtm, control=list(seed=0), k = 14)
+cameratrap.lda <- LDA(cameratrap.dtm, control=list(seed=0), k = 14)
+consplan.lda <- LDA(consplan.dtm, control=list(seed=0), k = 14)
+
 ```
 
 Show top 10 words pertaining to each topic
 
 ```{r ldaterms}
-terms(ISI.camera.lda, 10)
+terms(cameratrap.lda, 10)
 ```
 
 Obtain the most likely topics for each document, and show topic allocation for the first documents
 
 ```{r topic allocation}
-tt <- topics(ISI.camera.lda)
-docvars(ISI.camera.dfm, 'topic') <- tt[match(row.names(ISI.camera.dfm),names(tt))]
+tt <- topics(cameratrap.lda)
+docvars(cameratrap.dfm, 'topic') <- tt[match(row.names(cameratrap.dfm),names(tt))]
 
 
-head(topics(ISI.camera.lda), 5)
+head(topics(cameratrap.lda), 5)
 ```
 
 
 lists the document to (primary) topic assignments:
 ```{r primary topic}
-prd.topic <- topics(ISI.camera.lda)
+prd.topic <- topics(cameratrap.lda)
 table(prd.topic)
 ```
 
 The *tidytext* package provides this method for extracting the per-topic-per-word probabilities, called  β(“beta”), from the model.
 
 ```{r beta}
-ap_topics <- tidy(ISI.camera.lda, matrix = "beta")
+ap_topics <- tidy(cameratrap.lda, matrix = "beta")
 ap_topics
 ```
 
@@ -203,8 +215,8 @@ as.data.frame(ap_top_terms)
 Dendogram to evaluate how similar are the topics
 
 ```{r dendogram}
-#str(ISI.camera.lda)
-my.model <- ISI.camera.lda@beta
+#str(cameratrap.lda)
+my.model <- cameratrap.lda@beta
 distance_matrix <- dist(my.model, method="euclidean")
 plot(hclust(distance_matrix), cex = 1)
 
