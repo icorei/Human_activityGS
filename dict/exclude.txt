@@ -1,6 +1,7 @@
 allow_us
 poor_understood
 poor_known
+remain_poor
 previous_studi
 littl_known
 use_trap
@@ -49,3 +50,7 @@ better_understand
 use_data
 three_year
 provid_first
+investig_whether
+negat_relat
+recent_develop
+vari_among
