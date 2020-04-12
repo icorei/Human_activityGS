@@ -13,7 +13,8 @@ In the script [step1_bibtext_to_Rda.R](step1_bibtext_to_Rda.R) we use the **R** 
 Rscript --vanilla R/bibliometric-analysis/step1_bibtex_to_Rda.R ~/Documentos/Publicaciones/Camera-trap Review/the-big-picture data/ISI-20191211
 
 ## FOR JR:
-Rscript --vanilla R/bibliometric-analysis/step1_bibtex_to_Rda.R ~/proyectos/IVIC/the-big-picture data/ISI-20191211
+Rscript --vanilla R/bibliometric-analysis/step10_bibtex_to_Rda.R ~/proyectos/IVIC/the-big-picture data/ISI-20191211
+Rscript --vanilla R/bibliometric-analysis/step10_bibtex_to_Rda.R ~/proyectos/IVIC/the-big-picture data/ISI-20200409
 ```
 
 ## Step 2: Create text corpus
