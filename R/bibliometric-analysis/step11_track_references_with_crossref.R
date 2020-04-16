@@ -21,9 +21,10 @@ doi.search <- data.frame()
 for (origin in dois) {
    if (!origin %in% doi.search$doi) {
       q1 <- cr_works(doi=origin)
-      doi.search <- rbind(doi.search,data.frame(
+      if ("reference.count" %in% colnames(q1$data)) {
+         doi.search <- rbind(doi.search,data.frame(
             doi=origin,cited.refs=as.numeric(q1$data$reference.count)))
-
+         }
       if ("reference" %in% colnames(q1$data)) {
          dref <- unique(q1$data$reference[[1]]$DOI)
          lks <- rbind(lks, data.frame(l=origin, k=subset(dref,!is.na(dref))))
@@ -59,20 +60,5 @@ for (origin in dois) {
 dim(unique(lks))
 length(unique(lks$l))
 length(unique(lks$k))
-
-q1 <- cr_works(doi=dois[3],.progress="text")
-
-l2 <- unique(unlist(lapply(q2$data$reference,function(x) x$DOI)))
-lks <- rbind(lks, data.frame(l=dois[3], k=subset(l1,!is.na(l1))))
-
-
-
-q1 <- cr_works(doi=dois[1],.progress="text")
-
-
-
-qry <- cr_works(doi=dois,.progress="text")
-
-ref.dois <- unique(unlist(lapply(qry$data$reference,function(x) x$DOI)))
-ref.dois <- subset(ref.dois,!is.na(ref.dois) & !(ref.dois %in% dois))
-qry <- cr_works(doi=ref.dois,.progress="text")
+table(lks$l %in% tolower(subset(ISI20191211.df,PY %in% 2010)$DI))
+ table(lks$k %in% tolower(subset(ISI20191211.df,PY %in% 2010)$DI))

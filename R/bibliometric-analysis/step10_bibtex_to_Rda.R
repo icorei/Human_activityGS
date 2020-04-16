@@ -44,8 +44,8 @@ if (file.exists(rda.arch)) {
   cat(sprintf("Check resulting data frame...\n "))
   dim(ISI.search.df)
   table(ISI.search.df$search.group)
-assign(sprintf("%s.df",gsub("data/|-","",target.dir)),ISI.search.df)
-rm(ISI.search.df)
+  assign(sprintf("%s.df",gsub("data/|-","",target.dir)),ISI.search.df)
+  rm(ISI.search.df)
   cat(sprintf("Saving to rda file %s\n",rda.arch))
     save(file=rda.arch,list=ls(pattern=".df$"))
 }
