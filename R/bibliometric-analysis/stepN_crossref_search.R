@@ -24,10 +24,34 @@ for (k in search.term.1) {
       }
    }
 }
+##save(file="Rdata/CR-20200416.rda",list=ls(pattern="qry"))
 
 summary(as.numeric(subset(qry1$data,doi %in% tolower(ISI20191211.df$DI))$score))
 
 ## Check if we can use this to track cameratrap references from conservation planning references:
-dois <- tolower(ISI20200409.df$DI)
+dois <- unique(c(tolower(ISI20191211.df$DI),tolower(ISI20200409.df$DI)))
 dois <- subset(dois,!is.na(dois))
+
+lks <- data.frame()
+
+q1 <- cr_works(doi=dois[3],.progress="text")
+l1 <- unique(q1$data$reference[[1]]$DOI)
+lks <- rbind(lks, data.frame(l=dois[3], k=subset(l1,!is.na(l1))))
+l1 <- subset(l1,!is.na(l1) & !(l1 %in% dois) & !(l1 %in% lks$l))
+
+q2 <- cr_works(doi=l1,.progress="text")
+
+l2 <- unique(unlist(lapply(q2$data$reference,function(x) x$DOI)))
+lks <- rbind(lks, data.frame(l=dois[3], k=subset(l1,!is.na(l1))))
+
+
+
+q1 <- cr_works(doi=dois[1],.progress="text")
+
+
+
 qry <- cr_works(doi=dois,.progress="text")
+
+ref.dois <- unique(unlist(lapply(qry$data$reference,function(x) x$DOI)))
+ref.dois <- subset(ref.dois,!is.na(ref.dois) & !(ref.dois %in% dois))
+qry <- cr_works(doi=ref.dois,.progress="text")
