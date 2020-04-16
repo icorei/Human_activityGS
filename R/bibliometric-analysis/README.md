@@ -1,12 +1,16 @@
 # Analysis workflow
 
-## Step 1: Read list of references from WOS output
+## Step 1: Read list of references from the literature search
+
+### Web of science searches
 
 We searched the Web of Science database. Ressults were downloaded in bibtex format.
 
 First query was completed in december 2019. Search term for group 1: "camera trap"; and for group 2: "conservation planning" and "terrestrial". This data is in folder [data/ISI-20191211](/data/ISI-20191211)
 
-In the script [step1_bibtext_to_Rda.R](step1_bibtext_to_Rda.R) we use the **R** library *bibliometrix* to convert bibtex files into data frames, we specify the path to the script directory (repository home dir) and the target folder as script arguments like this:
+A second query was completed in april 2020. This data is in folder [data/ISI-20200409](/data/ISI-20200409)
+
+In the script [step10_bibtext_to_Rda.R](step10_bibtext_to_Rda.R) we use the **R** library *bibliometrix* to convert bibtex files into data frames, we specify the path to the script directory (repository home dir) and the target folder as script arguments like this:
 
 ```R
 ## FOR ADA:
@@ -16,6 +20,14 @@ Rscript --vanilla R/bibliometric-analysis/step1_bibtex_to_Rda.R ~/Documentos/Pub
 Rscript --vanilla R/bibliometric-analysis/step10_bibtex_to_Rda.R ~/proyectos/IVIC/the-big-picture data/ISI-20191211
 Rscript --vanilla R/bibliometric-analysis/step10_bibtex_to_Rda.R ~/proyectos/IVIC/the-big-picture data/ISI-20200409
 ```
+
+### Other searches
+
+The original search for
+[Stachowicz's review](/documents/Review_I.Stachowicz_23.03.pdf)
+ is in folder [data/IZZA](/data/IZZA).
+
+A script for integrating this data set is under development.
 
 ## Step 2: Create text corpus
 

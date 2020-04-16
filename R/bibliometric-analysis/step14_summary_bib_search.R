@@ -1,4 +1,5 @@
 require(readxl)
+setwd("~/proyectos/IVIC/the-big-picture")
 load("Rdata/ISI-20191211.rda")
 load("Rdata/ISI-20200409.rda")
 

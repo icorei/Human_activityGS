@@ -119,3 +119,9 @@ for (k in c(sprintf("CP%02d",1:14),"CPRV","CPNN")) {
     par(mar=c(2,2,4,0))
     hist(ss,xlim=c(0,12),breaks=seq(-.5,16.5,by=1),main=k)
 }
+
+## conservation planning literature per year: list of references: how many directly related to cameratrap research: how many indirectly related to camera trap: is this growing ?, year with maximum and minimum influence?
+
+## reference to old or new camera trap research? lag or gap?
+
+## how this differs by cons plan and camera trap topic?
