@@ -1,0 +1,101 @@
+100 Habitat
+    101 Coral
+    102 Freshwater
+    103 Riparian
+    104 Coastal
+    105 Urban
+    106 Agricultur
+       1061 Palm_plantation
+    110 Forest
+       111 tropical forest
+       112 temperate forest
+       113 boreal
+       114 dry
+120 Habitat_suitability
+121 Habitat_preference
+122 Habitat_quality
+123 Habitat_caracteristic 
+124 Spacial data 
+
+habitat_structur 100
+habitat_patch    100
+habitat_type     100
+wildlif_habitat  100
+veget_cover      100
+canopi_cover     100
+across_landscap  100
+habitat_avail    100
+buffer_zone      100
+
+coral_reef       101
+
+freshwat_ecosystem  102
+aquat_terrestri     102
+terrestri_freshwat  102
+freshwat_conserv    102
+freshwat_biodivers  102
+
+riparian_zone       103  
+riparian_forest     103
+
+coastal_area        104
+coastal_plain       104
+coastal_zone        104
+
+urban_landscap      105
+urban_develop       105
+urban_area          105
+
+
+agricultur_landscap 106
+Agrar_landscape     106  
+
+palm_plantat        1061
+palm_civet          1061
+oil_palm            1061
+
+forest_habitat   110
+forest_cover     110
+forest_area      110
+forest_patch     110
+tree_cover       110
+forest_remnant   110 
+forest_type      110
+nativ_forest     110
+forest_landscap  110
+natur_forest     110
+forest_speci     110
+primari_forest   110
+forest_site      110
+continu_forest   110
+
+atlant_forest     111
+tropic_forest     111
+tropic_rainforest 111
+rain_forest       111
+lowland_forest    111
+
+decidu_forest     112
+temper_forest     112
+
+boreal_forest     113
+
+dri_forest        114
+
+carbon_stock         122
+ecosystem_servic     122
+
+miner_lick           123
+habitat_requir       123
+habitat_characterist 123 
+environment_factor   123
+environment_condit   123
+test_whether         123
+
+spatial_scale       124
+landscap_scale      124
+use_spatial         124
+larg_spatial        124
+landscap_connect    124 
+habitat_connect     124
+landscap_structur   124

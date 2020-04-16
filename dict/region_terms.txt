@@ -1,12 +1,49 @@
-atlant_forest
-south_africa
-southeast_asia
-unit_state
-north_america
-south_america
-costa_rica
-malaysian_borneo
-southeastern_brazil
-sao_paulo
-sabah_malaysian
-peninsular_malaysia
+2100 NOrth America
+ 2101 United States
+2200 SouthAmerica adn central
+  2201 Brazil
+  2202 Costa_Rica
+  2203 Colombia
+2300 Europa
+2301 Francia
+2400 Asia
+  2401 Malasia
+2500 Africa
+2600 Australia
+2700 around_world
+
+
+
+atlant_forest   2201
+south_africa    2500
+
+north_america   2100
+north_america   2100
+unit_state      2101
+
+south_america   2200
+
+southeastern_brazil 2201
+brazilian_atlant    2201
+sao_paulo           2201
+costa_rica      2202
+
+southeast_asia  2400
+malaysian_borneo 2401
+sabah_malaysian  2401
+peninsular_malaysia 2401
+peninsular_malaysia 2401
+malaysian_borneo   2401
+
+
+south_africa     2500
+south_america    2500
+
+northern_australia 2600
+
+
+
+
+
+
+
