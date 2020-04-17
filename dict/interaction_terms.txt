@@ -1,0 +1,72 @@
+010 Behaviour
+041 Biotic_interactions
+042 Predator_prey
+    042 1 Nest predation
+044 Animal_plant
+800 Seasonality
+    801 seson
+    802 time
+
+
+
+habitat_prefer 010
+anim_movement  010
+
+
+interspecif_interact 041
+speci_interact       041
+interspecif_competit 041
+food web             041
+
+predat_risk  042
+prey_speci   042  
+predat_prey  042
+potenti_prey 042
+prey_popul   042
+predat_rate  042
+predat_speci 042
+main_prey    042
+tiger_prey   042
+prey_abund   042
+top_predat   042
+ 
+nest_predat  042 1
+nest_predat  042 1
+artifici_nest 042 1
+
+activ_level  800
+activ_peak   800 
+activ_period 800  
+speci_activ  800
+peak_activ   800
+habitat_activ 800 
+season_differ 800
+season_activ  800
+tempor_pattern 800
+
+wet_season  801
+dri_season  801
+season_variat 801 
+  
+daili_activ   802
+nocturn_activ 802
+activ_pattern 802
+diel_activ    802
+diurnal_activ 802 
+activ_day     802
+activ_night   802
+overlap_activ 802
+activ_time    802
+day_night     802
+
+seed_predat  044
+seed_germin  044  
+seed_dispers 044
+seed_remov   044
+
+
+
+
+
+
+

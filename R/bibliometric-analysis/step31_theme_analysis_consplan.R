@@ -7,7 +7,7 @@ library("RColorBrewer") # user friendly color palettes
 library(tidytext)
 library("ldatuning")
 
-load(file=sprintf("%s/ISI-20191211-cameratrap-corpus.rda",Rdata.dir))
+load(file=sprintf("%s/ISI-CP-corpus.rda",Rdata.dir))
 
 consplan.dfm <- dfm(consplan.bigram, thesaurus = camera_thesaurus)
 consplan.dfm

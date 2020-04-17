@@ -21,6 +21,16 @@ Rscript --vanilla R/bibliometric-analysis/step10_bibtex_to_Rda.R ~/proyectos/IVI
 Rscript --vanilla R/bibliometric-analysis/step10_bibtex_to_Rda.R ~/proyectos/IVIC/the-big-picture data/ISI-20200409
 ```
 
+In the script [step11_summary_bib_search.R](step11_summary_bib_search.R) we combine this information into a single bibliometric object.
+
+
+### Crossref search
+
+We used the crossref package to follow references in the cited refernce list of each article.
+
+This is described in script [step12_track_references_with_crossref.R](step12_track_references_with_crossref.R).
+
+
 ### Other searches
 
 The original search for
@@ -49,7 +59,7 @@ Rscript --vanilla R/bibliometric-analysis/step2_text_corpus.R ~/Documentos/Publi
 
 
 ## FOR JR:
-Rscript --vanilla R/bibliometric-analysis/step2_text_corpus.R ~/proyectos/IVIC/the-big-picture ISI-20191211 cameratrap
+Rscript --vanilla R/bibliometric-analysis/step20_text_corpus.R ~/proyectos/IVIC/the-big-picture ISI-search.df
 ```
 
 ## Step 3: Theme analysis for camera traps papers

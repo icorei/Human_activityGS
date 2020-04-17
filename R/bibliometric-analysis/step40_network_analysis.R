@@ -15,19 +15,19 @@ library(tidyr)
   #STEP 4: NETWORK ANALYSIS
   ######
 
-  cameratrap.prd <- topics(cameratrap.lda)
+  CT.prd <- topics(CT.lda)
   consplan.prd <- topics(consplan.lda)
 
 
-  ISI.search.df[match(names(cameratrap.prd),ISI.search.df$UT),"CT_topic"] <- sprintf("CT%02d",cameratrap.prd)
+  ISI.search.df[match(names(CT.prd),ISI.search.df$UT),"CT_topic"] <- sprintf("CT%02d",CT.prd)
   ISI.search.df[match(names(consplan.prd),ISI.search.df$UT),"CP_topic"] <- sprintf("CP%02d",consplan.prd)
 
-  ISI.search.df[ISI.search.df$DT %in% "REVIEW" & ISI.search.df$search.group %in% "cameratrap","CT_topic"] <- "CTRV"
+  ISI.search.df[ISI.search.df$DT %in% "REVIEW" & ISI.search.df$search.group %in% "CT","CT_topic"] <- "CTRV"
   ISI.search.df[ISI.search.df$DT %in% "REVIEW" & ISI.search.df$search.group %in% "consplan","CP_topic"] <- "CPRV"
 
   ISI.search.df[is.na(ISI.search.df$CP_topic) & ISI.search.df$search.group %in% "consplan","CP_topic"] <- "CPNN"
-  ISI.search.df[is.na(ISI.search.df$CT_topic) & ISI.search.df$search.group %in% "cameratrap","CT_topic"] <- "CTNN"
-  ISI.search.df$topic <- ifelse(ISI.search.df$search.group %in% "cameratrap",ISI.search.df$CT_topic,ISI.search.df$CP_topic)
+  ISI.search.df[is.na(ISI.search.df$CT_topic) & ISI.search.df$search.group %in% "CT","CT_topic"] <- "CTNN"
+  ISI.search.df$topic <- ifelse(ISI.search.df$search.group %in% "CT",ISI.search.df$CT_topic,ISI.search.df$CP_topic)
 
 table(ISI.search.df$search.group,ISI.search.df$topic,useNA="always")
 
@@ -120,7 +120,7 @@ for (k in c(sprintf("CP%02d",1:14),"CPRV","CPNN")) {
     hist(ss,xlim=c(0,12),breaks=seq(-.5,16.5,by=1),main=k)
 }
 
-## conservation planning literature per year: list of references: how many directly related to cameratrap research: how many indirectly related to camera trap: is this growing ?, year with maximum and minimum influence?
+## conservation planning literature per year: list of references: how many directly related to CT research: how many indirectly related to camera trap: is this growing ?, year with maximum and minimum influence?
 
 ## reference to old or new camera trap research? lag or gap?
 

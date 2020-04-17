@@ -18,14 +18,6 @@ if (!exists("target.dir")) {
   }
 }
 
-if (!exists("target.grp")) {
-  if (!is.na(args[3])) {
-    target.grp <- args[3]
-  } else {
-    target.grp <- readline(prompt="Enter label of target group of files: ")
-  }
-}
-
 
 ## Load required packages
 library(bibliometrix) #the library for bibliometrics
@@ -106,11 +98,11 @@ for (target.grp in unique(ISI.search.df$search.group)) {
   assign(sprintf("%s.bigram",target.grp),ISI.bigram)
   assign(sprintf("%s.wlist",target.grp),word.list)
   ## save to a Rdata object:
-  save(file=sprintf("%s/%s-%s-corpus.rda", Rdata.dir, target.dir, target.grp), list=ls(pattern=target.grp))
+  save(file=sprintf("%s/ISI-%s-corpus.rda", Rdata.dir,  target.grp), list=ls(pattern=target.grp))
 
 }
 
-word.list <- c(cameratrap.wlist,consplan.wlist)
+word.list <- c(CP.wlist,CT.wlist)
 
 word.list <- aggregate(data.frame(Freq=word.list),list(Word=names(word.list)),sum)
 word.list <- word.list[rev(order(word.list$Freq)),]
