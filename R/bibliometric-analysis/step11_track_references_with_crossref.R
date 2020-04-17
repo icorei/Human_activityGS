@@ -18,7 +18,7 @@ dois <- subset(dois,!is.na(dois))
 lks <- data.frame()
 doi.search <- data.frame()
 
-for (origin in dois) {
+for (origin in sample(dois[!dois %in% doi.search$doi])) {
    if (!origin %in% doi.search$doi) {
       q1 <- cr_works(doi=origin)
       if ("reference.count" %in% colnames(q1$data)) {
