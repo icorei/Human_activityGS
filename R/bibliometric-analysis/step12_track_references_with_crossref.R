@@ -15,45 +15,54 @@ readRenviron("~/.Renviron")
 dois <- unique(c(tolower(ISI20191211.df$DI),tolower(ISI20200409.df$DI)))
 dois <- subset(dois,!is.na(dois))
 
-lks <- data.frame()
-doi.search <- data.frame()
+mi.rda <- "Rdata/CR-20200416.rda"
+if (file.exists(mi.rda)) {
+   load(file=mi.rda)
+} else {
+   lks <- data.frame()
+   doi.search <- data.frame()
+}
 
 for (origin in sample(dois[!dois %in% doi.search$doi])) {
    if (!origin %in% doi.search$doi) {
-      q1 <- cr_works(doi=origin)
-      if ("reference.count" %in% colnames(q1$data)) {
-         doi.search <- rbind(doi.search,data.frame(
-            doi=origin,cited.refs=as.numeric(q1$data$reference.count)))
-         }
-      if ("reference" %in% colnames(q1$data)) {
-         dref <- unique(q1$data$reference[[1]]$DOI)
-         lks <- rbind(lks, data.frame(l=origin, k=subset(dref,!is.na(dref))))
+      q1 <- try(cr_works(doi=origin))
+      if (any(class(q1) %in% "try-error")) {
+         cat(sprintf("error with %s\n",origin))
+      } else {
+         if ("reference.count" %in% colnames(q1$data)) {
+            doi.search <- rbind(doi.search,data.frame(
+               doi=origin,cited.refs=as.numeric(q1$data$reference.count)))
+            }
+            if ("reference" %in% colnames(q1$data)) {
+               dref <- unique(q1$data$reference[[1]]$DOI)
+               lks <- rbind(lks, data.frame(l=origin, k=subset(dref,!is.na(dref))))
 
-         search.refs <- subset(dref,!is.na(dref) & !(dref %in% dois) & !(dref %in% lks$l) & !(dref %in% doi.search$doi))
+               search.refs <- subset(dref,!is.na(dref) & !(dref %in% dois) & !(dref %in% lks$l) & !(dref %in% doi.search$doi))
 
-         if(length(search.refs)>0) {
-            q2 <- cr_works(doi=search.refs,.progress="text")
-            dts <- subset(q2$data,!is.na(doi))
+               if(length(search.refs)>0) {
+                  q2 <- cr_works(doi=search.refs,.progress="text")
+                  dts <- subset(q2$data,!is.na(doi))
 
-            for (k in 1:nrow(dts)) {
-               dref <- dts$doi[k]
-               doi.search <- rbind(doi.search,data.frame(
-               doi=dref,cited.refs=as.numeric(dts$reference.count[k])))
+                  for (k in 1:nrow(dts)) {
+                     dref <- dts$doi[k]
+                     doi.search <- rbind(doi.search,data.frame(
+                        doi=dref,cited.refs=as.numeric(dts$reference.count[k])))
 
-               if (!is.null(dts$reference[[k]])) {
-                  if ("DOI" %in% colnames( dts$reference[[k]])) {
-                     iref <- dts$reference[[k]]$DOI
-                     lks <- rbind(lks, data.frame(l=dref, k=subset(iref,!is.na(iref))))
+                        if (!is.null(dts$reference[[k]])) {
+                           if ("DOI" %in% colnames( dts$reference[[k]])) {
+                              iref <- dts$reference[[k]]$DOI
+                              lks <- rbind(lks, data.frame(l=dref, k=subset(iref,!is.na(iref))))
+                           }
+                        }
+                     }
                   }
                }
+               lks <- unique(lks)
+               doi.search <- unique(doi.search)
+               save(file=mi.rda,lks ,doi.search)
             }
          }
       }
-      lks <- unique(lks)
-      doi.search <- unique(doi.search)
-       save(file="Rdata/CR-20200416.rda",lks ,doi.search)
-   }
-}
 
  (load(file="Rdata/CR-20200416.rda"))
  table(unique(doi.search$doi) %in% lks$l)
