@@ -9,28 +9,28 @@ library("ldatuning")
 
 load(file=sprintf("%s/ISI-CP-corpus.rda",Rdata.dir))
 
-consplan.dfm <- dfm(consplan.bigram, thesaurus = camera_thesaurus)
-consplan.dfm
+CP.dfm <- dfm(CP.bigram, thesaurus = camera_thesaurus)
+CP.dfm
 
-consplan.dfm <- dfm_trim(consplan.dfm, min_termfreq = 20)
+CP.dfm <- dfm_trim(CP.dfm, min_termfreq = 20)
 
 
-consplan.dtm <- convert(consplan.dfm, to = "topicmodels")
-consplan.lda <- LDA(consplan.dtm, control=list(seed=0), k = 14)
+CP.dtm <- convert(CP.dfm, to = "topicmodels")
+CP.lda <- LDA(CP.dtm, control=list(seed=0), k = 14)
 
-tt <- topics(consplan.lda)
-docvars(consplan.dfm, 'topic') <- tt[match(row.names(consplan.dfm),names(tt))]
+tt <- topics(CP.lda)
+docvars(CP.dfm, 'topic') <- tt[match(row.names(CP.dfm),names(tt))]
 
-consplan.topics <- tidy(consplan.lda, matrix = "beta")
-consplan.topics
+CP.topics <- tidy(CP.lda, matrix = "beta")
+CP.topics
 
-consplan.top_terms <- consplan.topics %>%
+CP.top_terms <- CP.topics %>%
 group_by(topic) %>%
 top_n(10, beta) %>%
 ungroup() %>%
 arrange(topic, -beta)
 
-consplan.top_terms %>%
+CP.top_terms %>%
 mutate(term = reorder_within(term, beta, topic)) %>%
 ggplot(aes(term, beta, fill = factor(topic))) +
 geom_col(show.legend = FALSE) +

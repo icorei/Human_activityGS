@@ -59,7 +59,7 @@ Rscript --vanilla R/bibliometric-analysis/step2_text_corpus.R ~/Documentos/Publi
 
 
 ## FOR JR:
-Rscript --vanilla R/bibliometric-analysis/step20_text_corpus.R ~/proyectos/IVIC/the-big-picture ISI-search.df
+Rscript --vanilla R/bibliometric-analysis/step20_text_corpus.R ~/proyectos/IVIC/the-big-picture ISI-search-df
 ```
 
 ## Step 3: Theme analysis for camera traps papers
@@ -67,6 +67,10 @@ Rscript --vanilla R/bibliometric-analysis/step20_text_corpus.R ~/proyectos/IVIC/
 For this step of the lexical analysis we use *R markdown* to add comments and output to the script.
 
 ```R
+
+R --vanilla --args ~/proyectos/IVIC/the-big-picture
+
+
 ## in Mac OSx
 ##export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc
 R --vanilla

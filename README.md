@@ -1,7 +1,9 @@
 # the-big-picture
-*Systematic review of camera trap application in conservation: the Big picture?*
+*Camera traps in conservation biology research: the big picture*
+<!--//
 OR
 *Just another pretty picture?, the role of camera trap in biological conservation*
+//-->
 
 Camera traps is a valuable tool for wildlife research, but what is its potential and real impact in conservation planning and action?
 
@@ -12,12 +14,16 @@ Camera traps is a valuable tool for wildlife research, but what is its potential
 
 ## Outline
 
+First topic analysis: consider a large number, make a dendrogram, then identify if there are one or few related to conservation (links)
+
 Camera traps are a powerful tool for wildlife research as they allow to collect evidence of species presence, abundance and behavior in time. Data camera traps can play an important role in conservation projects, but this remains unquantified. Here we combine bibliometric analysis and narrative review to a) describe the advances and drawbacks in the uptake of camera trap data in conservation across time, regions, and taxonomic groups, b) measure the frequency of camera trap research associated with different steps in conservation planning process, and c) highlight good examples of the application of camera trap data to inform conservation action.
 Fig: grow in references and cites through time, lines for several subjects (mechanical improvements, method development, etc) annotate important milestones (automatic trigger, digital cameras, image recognition, databases, etc).
 
 There are different direct and indirect pathways that can link camera trap data to the different steps in conservation planning. The literature search only highlights a subset of the direct pathways, as these papers tend to focus on the role of the camera traps and research questions rather than conservation actions. Review of action plans for selected species/programs allowed us to identify a broader set of pathways, where the role of camera trap is not always addressed explicitly.
 
 For conservation practitioners camera traps are a tool with a broad spectrum of applications.
+
+
 
 ## Repository structure
 

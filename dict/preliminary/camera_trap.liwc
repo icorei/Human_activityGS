@@ -1,0 +1,357 @@
+%
+010 Behaviour
+020 Home_Range
+030 Population
+031 Density_Estimation
+032 Occupancy_model
+033 Capture_Recapture
+034 Distribution
+035 Rarity
+036 Widespread
+037 Reprod_LifeHistory
+040 Community
+041 Biotic_interactions
+042 Predator_prey
+043 Diversity
+044 Animal_plant
+
+050 Ind_identification
+051 Sp_identification
+
+060 Citizen_science
+
+070 Monitoring
+
+100 Habitat
+110 Forest
+120 Habitat_suitability
+121 Habitat_preference
+122 Habitat_quality
+130 Palm_plantation
+140 Agrar_landscape
+
+200 Human_impact
+210 Fragmentation
+211 Edge_effect
+215 Habitat loss
+220 Bio_Invasions
+230 Climate_Change
+240 Hunting
+
+300 Conservation
+310 Protected_Areas
+320 Conservation_plan
+330 Species_status
+340 Law_enforcement
+
+600 Taxa_Groups
+610 Mammals
+620 Large_Mammals
+630 Small_Mammals
+631 Tiger
+632 Bear
+640 Birds
+
+700 Wildlife
+
+800 Seasonality
+
+%
+
+activ_pattern     010
+nocturn_activ     010
+activ_day         010
+diel_activ        010
+daili_activ       010
+tempor_activ      010
+diurnal_activ     010
+day_night         010
+
+home_rang         020
+kernel_densiti    020
+
+densiti_estim     031
+abund_densiti     031
+popul_densiti     031
+estim_densiti     031
+estim_abund       031
+popul_estim       030
+popul_dynam       030
+speci_abund       031
+relat_abund       031
+popul_size        030
+estim_popul       030
+abund_estim       031
+abund_speci       031
+
+tiger_popul       631 030
+tiger_densiti     631 031
+densiti_tiger     631 031
+tiger_abund       631 031
+bear_popul        632 030
+
+
+occup_probabl     032
+probabl_detect    032
+detect_probabl    032
+occup_model       032
+occup_detect      032
+site_occup        032
+speci_detect      032
+detect_rate       032
+captur_probabl    032
+detect_nondetect  032
+detect_presenc    032
+detect_mammal     032
+detect_individu   032
+
+captur_histori    032 033
+
+capturerecaptur_data 033
+explicit_capturerecaptur 033
+spatial_explicit  033
+spatial_capturerecaptur 033
+capturerecaptur_model 033
+scr_model         033
+secr_model        033
+capturerecaptur_analysi 033
+capturerecaptur_data  033
+capturerecaptur_scr 033
+capturerecaptur_method  033
+
+spatial_distribut 034
+speci_distribut   034
+record_speci      034
+speci_record      034
+rang_size         034 020
+distribut_model   034
+distribut_speci   034
+distribut_pattern 034
+
+
+low_densiti       035
+popul_declin      035 030
+elus_speci        035
+rare_elus         035
+occur_low         035
+cryptic_speci     035
+rare_speci        035
+
+wide_distribut    036
+
+mammal_communiti  040
+seed_remov        041 044
+seed_dispers      041 044
+seed_predat       041 044
+remov_seed        041 044
+
+food_resourc      041
+speci_interact    041
+interspecif_interact  041
+dung_beetl        041
+
+predat_prey       042
+potenti_prey      042
+predat_risk       042
+prey_speci        042
+nest_predat       042
+apex_predat       042
+
+tiger_prey        631 042
+
+speci_rich        043
+speci_composit    043
+
+individu_identifi 050
+identifi_individu 050
+individu_identif  050
+
+identifi_speci    051
+speci_identifi    051
+
+baselin_data      070
+cameratrap_monitor  070
+trap_monitor      070
+monitor_method    070
+monitor_wildlif   070 700
+longterm_monitor  070
+popul_monitor     070
+method_monito     070
+wildlif_monitor   070 700
+continu_monitor   070
+biodivers_monitor 070
+monitor_program   070
+
+
+citizen_scienc    060
+citizen_scientist 060
+habitat_type      100
+open_habitat      100
+
+forest_area       110
+forest_fragment   110 210
+forest_habitat    110
+forest_cover      110
+primari_forest    110
+rain_forest       110
+continu_forest    110 210
+forest_manag      110
+forest_patch      110 210
+dri_forest        110
+secondari_forest  110
+forest_remnant    110 210 215
+forest_landscap   110
+forest_type       110
+tropic_forest     110
+forest_site       110
+forest_mammal     110
+forest_speci      110
+nativ_forest      110
+log_forest        110
+forest_edg        110 211
+lowland_forest    110
+decidu_forest     110
+tropic_rainforest 110
+riparian_forest   110
+natur_forest      110
+
+edg_effect        211
+
+habitat_patch     100
+pattern_habitat   100
+influenc_habitat  100
+import_habitat    100
+habitat_activ     100
+speci_habitat     100
+habitat_speci     100
+habitat_structur  100
+natur_habitat     100
+habitat_occup     100
+habitat_disturb   100
+differ_habitat    100
+habitat_variabl   100
+habitat_characterist  100
+
+suitabl_habitat   120
+habitat_suitabl   120
+
+habitat_prefer    121
+habitat_select    121
+
+habitat_qualiti   122
+habitat_degrad    122
+
+
+oil_palm          130
+palm_plantat      130
+
+agricultur_landscap 140
+
+fragment_landscap 210
+loss_fragment     210 215
+habitat_fragment  210
+
+habitat_loss      215
+
+invas_speci       220
+
+climat_chang      230
+
+hunt_pressur      240
+
+anthropogen_factor  200
+anthropogen_disturb 200
+human_presenc       200
+human_impact        200
+humandomin_landscap 200
+human_activ         200
+human_disturb       200
+human_popul         200
+human_settlement    200
+urban_area          200
+
+effect_conserv    300
+conserv_effort    300
+biodivers_conserv 300
+wildlif_conserv   300 700
+inform_conserv    300
+biodivers_hotspot 300
+
+nation_park       310
+protect_area      310
+conserv_area      310
+biospher_reserv   310
+wildlif_sanctuari 310 700
+natur_reserv      310
+forest_reserv     310
+game_reserv       310
+
+tiger_reserv      631 310
+
+manag_conserv     320
+manag_decis       320
+conserv_strategi  320
+conserv_plan      320
+manag_strategi    320
+conserv_action    320
+conserv_manag     320
+wildlif_manag     320 700
+speci_conserv     320
+manag_plan        320
+
+conserv_valu      330
+endang_speci      330
+iucn_red          330
+critic_endang     330
+conserv_concern   330
+threaten_speci    330
+red_list          330
+conserv_status    330
+near_threaten     330
+
+law_enforc        340
+
+mammal_speci      610
+terrestri_mammal  610
+large_carnivor    042
+large_mammal      610 620
+larg_mammal       610 620
+larg_carnivor     042
+small_mammal      610 630
+carnivor_speci    042
+small_carnivor    042
+bird_speci        640
+carnivor_communiti  042
+mammal_bird       640 610
+bird_mammal       640 610
+
+wildlif_speci     700
+wildlif_popul     700
+
+dri_season        800
+wet_season        800
+breed_season      800 037
+season_variat     800
+wet_dri           800
+
+breed_success     037
+nest_site         037
+artifici_nest     037
+sex_ratio         037
+male_femal        037
+adult_male        037
+age_sex           037
+adult_femal       037
+sex_age           037
+natur_histori     037
+
+estim_tiger       631
+
+black_bear        632
+brown_bear        632
+bear_ursus        632
+sun_bear          632
+grizzli_bear      632
+ursus_arcto       632
+andean_bear       632
+ursus_americanus  632

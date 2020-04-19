@@ -1,0 +1,130 @@
+%
+020 Home_Range
+
+030 Population
+031 Density_Estimation
+032 Occupancy_model
+033 Capture_Recapture
+034 Distribution
+035 Rarity
+036 Widespread
+037 Reprod_LifeHistory
+
+040 Community
+043 Diversity
+
+050 Ind_identification
+051 Sp_identification
+
+%
+
+home_rang         020
+kernel_densiti    020
+
+popul_estim       030
+popul_dynam       030
+popul_size        030
+popul_structur    030
+popul_trend       030
+popul_growth      030
+popul_status      030
+popul_structur    030
+estim_popul       030
+assess_popul      030
+densiti_estim     031
+densiti_speci     031
+popul_densiti     031
+estim_densiti     031
+estim_abund       031
+speci_abund       031
+relat_abund       031
+distribut_abund   031
+local_abund       031
+popul_abund       031
+abund_estim       031
+abund_speci       031
+abund_distribut   031
+abund_densiti     031
+abund_indic       031
+abund_index       031
+
+occup_probabl     032
+occup_rate        032
+occup_model       032
+occup_estim       032
+estim_occup       032
+model_occup       032
+site_occup        032
+speci_occup       032
+multispeci_occup  032
+area_occupi       032
+use_occup         032
+probabl_occup     032
+occup_detect      032
+estim_detect      032
+speci_detect      032
+probabl_detect    032
+detect_probabl    032
+detect_nondetect  032
+detect_presenc    032
+detect_mammal     032
+detect_individu   032
+detect_rate       032
+
+mix_model         032 033
+nmixtur_model     032 033
+
+captur_probabl    032
+captur_histori    032 033
+captur_recaptur   032 033
+captur_rate       032 033
+capturerecaptur_data  033
+capturerecaptur_model  033
+capturerecaptur_analysi  033
+capturerecaptur_data  033
+capturerecaptur_scr  033
+capturerecaptur_secr  033
+capturerecaptur_method  033
+explicit_capturerecaptur  033
+
+spatial_explicit  033
+spatial_capturerecaptur 033
+scr_model         033
+secr_model        033
+
+spatial_distribut 034
+speci_distribut   034
+record_speci      034
+speci_record      034
+rang_size         034 020
+distribut_model   034
+distribut_speci   034
+distribut_pattern 034
+distribut_rang    034
+
+low_densiti       035
+popul_declin      035 030
+elus_speci        035
+rare_elus         035
+occur_low         035
+cryptic_speci     035
+rare_speci        035
+
+wide_distribut    036
+
+mammal_communiti  040
+
+speci_rich        043
+speci_composit    043
+rich_abund        043
+rich_divers       043
+mammal_divers     043
+speci_divers      043
+
+individu_identifi 050
+identifi_individu 050
+individu_identif  050
+
+identifi_speci    051
+speci_identifi    051
+

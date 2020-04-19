@@ -38,12 +38,18 @@ load(file=sprintf("%s/%s.rda",Rdata.dir,target.dir))
 
 ## load dictionaries:
 
-exclude.words <- read.table(file=sprintf("%s/dict/exclude.txt",script.dir),as.is=T)$V1
-species.words <- read.table(file=sprintf("%s/dict/species_terms.txt",script.dir),as.is=T)$V1
-regions.words <- read.table(file=sprintf("%s/dict/region_terms.txt",script.dir),as.is=T)$V1
+exclude.words <- read.table(file=sprintf("%s/dict/terms/exclude.txt",script.dir),as.is=T)$V1
+species.words <- read.table(file=sprintf("%s/dict/terms/species_terms.txt",script.dir),as.is=T)$V1
+regions.words <- read.table(file=sprintf("%s/dict/terms/region_terms.txt",script.dir),as.is=T)$V1
 
 # Dictionay of related terms in LIWC format
-camera_thesaurus <- dictionary(file = sprintf("%s/dict/camera_trap.liwc",script.dir), format = "LIWC")
+status_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/status.liwc",script.dir), format = "LIWC")
+threats_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/threats.liwc",script.dir), format = "LIWC")
+conservation_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/conservation.liwc",script.dir), format = "LIWC")
+interaction_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/interaction.liwc",script.dir), format = "LIWC")
+habitat_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/habitat.liwc",script.dir), format = "LIWC")
+##region_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/region.liwc",script.dir), format = "LIWC")
+##taxonomic_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/taxonomic.liwc",script.dir), format = "LIWC")
 
 #Look at document types
 table (ISI.search.df$DT)
@@ -108,13 +114,13 @@ word.list <- aggregate(data.frame(Freq=word.list),list(Word=names(word.list)),su
 word.list <- word.list[rev(order(word.list$Freq)),]
 
 ## most common words
-write.csv(file=sprintf("%s/dict/common_wordlist.csv",script.dir), subset(word.list,Freq>20))
+write.csv(file=sprintf("%s/dict/wordlists/common_wordlist.csv",script.dir), subset(word.list,Freq>20))
 
-write.csv(file=sprintf("%s/dict/common_not_in_dictionary_wordlist.csv",script.dir),
-subset(word.list,Freq>20 & !(Word %in% unlist(camera_thesaurus@.Data)) & !(Word %in% species.words) & !(Word %in% regions.words)))
+write.csv(file=sprintf("%s/dict/wordlists/common_not_in_dictionary_wordlist.csv",script.dir),
+subset(word.list,Freq>20 & !(Word %in% unlist(conservation_thesaurus@.Data)) & !(Word %in% unlist(habitat_thesaurus@.Data)) & !(Word %in% unlist(status_thesaurus@.Data)) & !(Word %in% unlist(interaction_thesaurus@.Data))& !(Word %in% unlist(threats_thesaurus@.Data)) & !(Word %in% species.words) & !(Word %in% regions.words)))
 
 ## (almost) all words, we compress this using gzip
-zz <- gzfile(sprintf("%s/dict/wordlist.csv.gz",script.dir), "w")
+zz <- gzfile(sprintf("%s/dict/wordlists/wordlist.csv.gz",script.dir), "w")
 write.csv(file=zz,rev(sort(word.list[word.list>1])))
 close(zz)
 

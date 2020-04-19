@@ -1,0 +1,40 @@
+%
+2100 North_America
+2200 South_America
+2201 Brazil
+2202 Costa_Rica
+2400 Asia
+2401 Malasia
+2500 Africa
+2600 Australia
+
+%
+
+north_america   2100
+north_america   2100
+unit_state      2100
+
+south_america   2200
+
+atlant_forest   2200 2201
+southeastern_brazil 2200 2201
+brazilian_atlant    2200 2201
+sao_paulo           2200 2201
+
+costa_rica      2200 2202
+
+southeast_asia  2400
+malaysian_borneo 2400 2401
+sabah_malaysian  2400 2401
+peninsular_malaysia 2400 2401
+peninsular_malaysia 2400 2401
+malaysian_borneo   2400 2401
+
+south_africa     2500
+
+northern_australia 2600
+
+
+
+
+
