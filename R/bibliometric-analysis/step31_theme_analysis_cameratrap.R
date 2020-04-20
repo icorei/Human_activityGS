@@ -31,8 +31,40 @@ setwd(work.dir)
 
 ## Load data from previous step:
 (load(file=sprintf("%s/ISI-CT-corpus.rda",Rdata.dir)))
+(load(file=sprintf("%s/ISI-CP-corpus.rda",Rdata.dir)))
 (load(file=sprintf("%s/ISI-search-df.rda",Rdata.dir)))
 
+
+## direct citations
+cts <- data.frame()
+for (k in 1:nrow(ISI.search.df)) {
+  l <- grep(ISI.search.df$SR[k],ISI.search.df$CR)
+  if (length(l)>0)
+    cts <- rbind(cts,data.frame(k,l))
+}
+table(ISI.search.df[cts$l,"search.group"],
+ISI.search.df[cts$k,"search.group"])
+
+slc <- subset(cts,(ISI.search.df[cts$l,"search.group"] %in% "CT") & (ISI.search.df[cts$k,"search.group"] %in% "CP"))
+oslc <- rev(sort(table(slc$l)))
+
+output.arch <- sprintf("%s/R/manual-anotations/README.md",script.dir)
+cat(file=output.arch,
+  sprintf("|Camera trap studies|cited in Cons. Plan.|Assigned to|\n|---|---|---|\n"))
+
+#paste(rep(c("ADA","ADA",NA),45), #
+#  rep(c(NA,"JR","JR"),45)[1:nrow(oslc)],
+# rep(c("IZZA",NA,"IZZA"),45)[1:nrow(oslc)])
+quien <- rep(c("ADA / JR","ADA / IZZA","IZZA / JR"),45)[1:nrow(oslc)]
+names(quien) <- names(oslc)
+
+
+for (k in names(oslc)) {
+
+  cat(file=output.arch,append=T,
+sprintf("|[%s](http://doi.org/%s) | %s | %s |\n", ISI.search.df[as.numeric(k),"TI"], ISI.search.df[as.numeric(k),"DI"],oslc[k],quien[k]) )
+
+}
 
 ## load dictionaries:
 
@@ -59,6 +91,16 @@ CT.dfm <- dfm_lookup(CT.dfm,dictionary = threats_thesaurus,exclusive=FALSE)
 CT.dfm <- dfm_lookup(CT.dfm,dictionary = habitat_thesaurus,exclusive=FALSE)
 CT.dfm <- dfm_lookup(CT.dfm,dictionary = interaction_thesaurus,exclusive=FALSE)
 
+
+CP.bigram <- tokens_select(CP.bigram, species.words, selection = 'remove')
+CP.bigram <- tokens_select(CP.bigram, regions.words, selection = 'remove')
+
+CP.dfm <- dfm(CP.bigram, thesaurus = conservation_thesaurus)
+CP.dfm <- dfm_lookup(CP.dfm,dictionary = status_thesaurus,exclusive=FALSE)
+CP.dfm <- dfm_lookup(CP.dfm,dictionary = threats_thesaurus,exclusive=FALSE)
+CP.dfm <- dfm_lookup(CP.dfm,dictionary = habitat_thesaurus,exclusive=FALSE)
+CP.dfm <- dfm_lookup(CP.dfm,dictionary = interaction_thesaurus,exclusive=FALSE)
+
 ##tmp.dfm <- dfm_remove(tmp.dfm, pattern = taxonomic_thesaurus)
 ##tmp.dfm <- dfm_remove(tmp.dfm, pattern = region_thesaurus)
 
@@ -66,8 +108,12 @@ CT.dfm
 
 CT.dfm <- dfm_trim(CT.dfm, min_termfreq = 20)
 
+CP.dfm <- dfm_trim(CP.dfm, min_termfreq = 20)
+
 
 CT.dtm <- convert(CT.dfm, to = "topicmodels")
+
+CP.dtm <- convert(CP.dfm, to = "topicmodels")
 
 if (!exists("result")) {
   result <- FindTopicsNumber(
@@ -84,12 +130,16 @@ if (!exists("result")) {
 plot(CaoJuan2009~topics,result)
 
 
-CT.lda <- LDA(CT.dtm, control=list(seed=0), k = 30)
+CT.lda <- LDA(CT.dtm, control=list(seed=0), k = 15)
+
+CP.lda <- LDA(CP.dtm, control=list(seed=0), k = 30)
 
 tt <- topics(CT.lda)
 docvars(CT.dfm, 'topic') <- tt[match(row.names(CT.dfm),names(tt))]
 
 CT.topics <- tidy(CT.lda, matrix = "beta")
+
+CP.topics <- tidy(CP.lda, matrix = "beta")
 CT.topics
 
 CT.top_terms <- CT.topics %>%
@@ -123,10 +173,44 @@ for (k in seq(along=ISI.search.df$SR)[ISI.search.df$search.group %in% "CT"]) {
   ISI.search.df$CP_nref[k] <- sum(grepl(ISI.search.df$SR[k],subset(ISI.search.df,search.group %in% "CP")$CR))
 }
 
-my.model <- CT.lda@beta
-distance_matrix <- dist(my.model, method="euclidean")
-plot(hclust(distance_matrix), cex = 1)
+CT.beta <- CT.lda@beta
+rownames(CT.beta) <- sprintf("CT%02d",1:nrow(CT.beta))
 
+CT.dist <- dist(CT.beta, method="euclidean")
+CT.clus <- hclust(CT.dist)
+
+CP.beta <- CP.lda@beta
+rownames(CP.beta) <- sprintf("CP%02d",1:nrow(CP.beta))
+
+CP.dist <- dist(CP.beta, method="euclidean")
+CP.clus <- hclust(CP.dist)
+
+plot(CT.clus, cex = 1)
+
+
+tt <- topics(CT.lda)
+ISI.search.df[match(names(tt),ISI.search.df$UT),"topic"] <- sprintf("CT%02d",tt)
+tt <- topics(CP.lda)
+ISI.search.df[match(names(tt),ISI.search.df$UT),"topic"] <- sprintf("CP%02d",tt)
+
+mtz <- table(ISI.search.df[cts$l,"topic"], ISI.search.df[cts$k,"topic"])
+mtz <- cbind(mtz,CP04=rep(0,nrow(mtz)))
+
+## in opposite direction, fewer references...
+#mtz <- table(ISI.search.df[cts$k,"topic"], ISI.search.df[cts$l,"topic"])
+#mtz <- rbind(mtz,CP04=rep(0,ncol(mtz)))
+
+grph <- graph_from_adjacency_matrix(mtz, mode = "directed", weighted = TRUE,  diag = FALSE)
+
+# use heatmap() with a matrix of links and dendrograms of the topics on each group
+require(viridis)
+clrs <- c(NA,brewer.pal(9,"PuRd"))
+#clrs <- viridis(10)
+
+mt2 <- as.matrix(mtz[grep("CT",rownames(mtz)),grep("CP",colnames(mtz))])
+mt2[sort(rownames(mt2)),sort(colnames(mt2))]
+
+heatmap(mt2, Rowv=as.dendrogram(CT.clus), Colv=as.dendrogram(CP.clus), col=clrs)
 
 aggregate(ISI.search.df$CP_nref[match(names(tt),ISI.search.df$UT)] > 0 ,list(tt),sum)
 
