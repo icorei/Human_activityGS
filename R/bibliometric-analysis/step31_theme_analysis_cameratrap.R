@@ -35,35 +35,6 @@ setwd(work.dir)
 (load(file=sprintf("%s/ISI-search-df.rda",Rdata.dir)))
 
 
-## direct citations
-cts <- data.frame()
-for (k in 1:nrow(ISI.search.df)) {
-  l <- grep(ISI.search.df$SR[k],ISI.search.df$CR)
-  if (length(l)>0)
-    cts <- rbind(cts,data.frame(k,l))
-}
-table(ISI.search.df[cts$l,"search.group"],
-ISI.search.df[cts$k,"search.group"])
-
-slc <- subset(cts,(ISI.search.df[cts$l,"search.group"] %in% "CT") & (ISI.search.df[cts$k,"search.group"] %in% "CP"))
-oslc <- rev(sort(table(slc$l)))
-
-output.arch <- sprintf("%s/R/manual-anotations/README.md",script.dir)
-cat(file=output.arch,
-  sprintf("|Camera trap studies|cited in Cons. Plan.|Assigned to|\n|---|---|---|\n"))
-
-#paste(rep(c("ADA","ADA",NA),45), #
-#  rep(c(NA,"JR","JR"),45)[1:nrow(oslc)],
-# rep(c("IZZA",NA,"IZZA"),45)[1:nrow(oslc)])
-quien <- rep(c("ADA / JR","ADA / IZZA","IZZA / JR"),45)[1:nrow(oslc)]
-names(quien) <- names(oslc)
-
-for (k in names(oslc)) {
-  cat(file=output.arch,append=T,
-sprintf("|[%s](http://doi.org/%s) | %s | %s |\n", ISI.search.df[as.numeric(k),"TI"], ISI.search.df[as.numeric(k),"DI"],oslc[k],quien[k]) )
-
-}
-
 ## load dictionaries:
 
 exclude.words <- read.table(file=sprintf("%s/dict/terms/exclude.txt",script.dir),as.is=T)$V1
@@ -114,21 +85,22 @@ CT.dtm <- convert(CT.dfm, to = "topicmodels")
 CP.dtm <- convert(CP.dfm, to = "topicmodels")
 
 if (!exists("result")) {
+  ## how many cores can we use?
+  ## on mac osx use: sysctl -n hw.ncpu; on Linux: nproc
   result <- FindTopicsNumber(
     CT.dtm,
-    topics = c(5:15,seq(from = 16, to = 61, by = 5)),
-    metrics = c("CaoJuan2009"),
+    topics = seq(from = 5, to = 150, by = 5),
+    metrics = c("Griffiths2004", "CaoJuan2009", "Arun2010", "Deveaud2014"),
     method = "Gibbs",
     control = list(seed = 77),
-    mc.cores = 2L,
+    mc.cores = 5,
     verbose = TRUE
   )
 }
 
-plot(CaoJuan2009~topics,result)
+FindTopicsNumber_plot(result)
 
-
-CT.lda <- LDA(CT.dtm, control=list(seed=0), k = 15)
+CT.lda <- LDA(CT.dtm, control=list(seed=0), k = 45)
 
 CP.lda <- LDA(CP.dtm, control=list(seed=0), k = 30)
 
@@ -154,22 +126,24 @@ facet_wrap(~ topic, scales = "free") +
 coord_flip() +
 scale_x_reordered()
 
-topic.names <- c("Frst cons","Bio inter","Pop mngmnt","Behaviour","Diversity","PAs","Occu","Density","Hum imp")
+##topic.names <- c("Frst cons","Bio inter","Pop mngmnt","Behaviour","Diversity","PAs","Occu","Density","Hum imp")
 
 tt <- topics(CT.lda)
 
 aggregate(ISI.search.df$cons.kwd[match(names(tt),ISI.search.df$UT)] %in% "YES",list(tt),mean)
+hist(aggregate(ISI.search.df$cons.kwd[match(names(tt),ISI.search.df$UT)] %in% "YES",list(tt),mean)$x)
+subset(aggregate(ISI.search.df$cons.kwd[match(names(tt),ISI.search.df$UT)] %in% "YES",list(tt),mean),x>.4)
 
-CT.top_terms %>% filter(topic %in% c(11))
-CT.top_terms %>% filter(topic %in% c(11,15))
-CT.top_terms %>% filter(topic %in% c(17,21))
+CT.top_terms %>% filter(topic %in% c(11) & beta>.1)
+CT.top_terms %>% filter(topic %in% c(36) & beta>.1)
+CT.top_terms %>% filter(topic %in% c(37,41) & beta>.1)
 
+## some topics do not have any term above 0.1
+## maybe topics can be classified as "dominated by one term", "codominated by n terms", "heterogeneous topics"
+CT.top_terms %>% filter(beta>.1) %>% print.AsIs()
+
+## times cited per topic
 boxplot(log1p(ISI.search.df$TC[match(names(tt),ISI.search.df$UT)])~tt)
-
-ISI.search.df$CP_nref <- NA
-for (k in seq(along=ISI.search.df$SR)[ISI.search.df$search.group %in% "CT"]) {
-  ISI.search.df$CP_nref[k] <- sum(grepl(ISI.search.df$SR[k],subset(ISI.search.df,search.group %in% "CP")$CR))
-}
 
 CT.beta <- CT.lda@beta
 rownames(CT.beta) <- sprintf("CT%02d",1:nrow(CT.beta))
@@ -183,10 +157,45 @@ rownames(CP.beta) <- sprintf("CP%02d",1:nrow(CP.beta))
 CP.dist <- dist(CP.beta, method="euclidean")
 CP.clus <- hclust(CP.dist)
 
+## cluster
 plot(CT.clus, cex = 1)
 
+## main topic
+tt <- topics(CT.lda,k=5)
 
-tt <- topics(CT.lda)
+## but more than one topic per paper is likely...
+tt <- topics(CT.lda,threshold=2/45)
+## we can also consider here papers "focused on one topic", "connecting n topics", and "multi-topic or heterogeneous" papers
+
+## this show how many topics per paper...
+hist(unlist(lapply(tt,length)))
+
+
+
+lda_gamma <- tidy(CT.lda, matrix = "gamma")
+lda_gamma
+
+tt <- with(lda_gamma,tapply(gamma,list(document,topic),mean))
+d0 <- dist(tt)
+h0 <- hclust(d0)
+
+## image showing clusters of papers per topic
+image(tt[h0$order,CT.clus$order])
+image(tt[h0$order,CT.clus$order]>2/45)
+
+## weight of topic in the whole group, this could be partitioned by year or other subgrouping to show differences...
+barplot(colSums(tt))
+
+
+## this is not working well since
+require(vegan)
+mi.pca1<- rda(tt)
+mi.pca2 <- capscale(d0~1)
+
+
+
+
+
 ISI.search.df[match(names(tt),ISI.search.df$UT),"topic"] <- sprintf("CT%02d",tt)
 tt <- topics(CP.lda)
 ISI.search.df[match(names(tt),ISI.search.df$UT),"topic"] <- sprintf("CP%02d",tt)
@@ -211,14 +220,6 @@ mt2[sort(rownames(mt2)),sort(colnames(mt2))]
 heatmap(mt2, Rowv=as.dendrogram(CT.clus), Colv=as.dendrogram(CP.clus), col=clrs)
 
 aggregate(ISI.search.df$CP_nref[match(names(tt),ISI.search.df$UT)] > 0 ,list(tt),sum)
-
-lda_gamma <- tidy(CT.lda, matrix = "gamma")
-lda_gamma
-
-tt <- with(lda_gamma,tapply(gamma,list(document,topic),mean))
-
-require(vegan)
-mi.pca1<- rda(tt)
 
 mtz <- aggregate(tt, by=list(ISI.search.df[match(rownames(tt),ISI.search.df$UT),"PY"]),sum)
 

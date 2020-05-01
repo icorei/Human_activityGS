@@ -15,13 +15,13 @@ if (!exists("script.dir")) {
 ##~/.Renviron con la línea crossref_email= "mi.correo@electroni.co"
 ##https://github.com/ropensci/rAltmetric
 require(rAltmetric)
-
-
 library(bibliometrix) #the library for bibliometrics
 require(ggplot2) #visualization
 library(dplyr) #for data munging
 library("RColorBrewer") # user friendly color palettes
 library(tidytext)
+library(magrittr)
+library(purrr)
 
 ## Set up working environment (customize accordingly...)
 work.dir <- sprintf("%s/R/bibliometric-analysis", script.dir)
@@ -34,8 +34,6 @@ setwd(work.dir)
 (load(file=sprintf("%s/ISI-CP-corpus.rda",Rdata.dir)))
 (load(file=sprintf("%s/ISI-search-df.rda",Rdata.dir)))
 
-library(magrittr)
-library(purrr)
 ids <- unique(ISI.search.df$DI)
 ids <- list(c(subset(ids,!is.na(ids))))
 
@@ -45,21 +43,7 @@ alm <- function(x)  {
   m %>% altmetric_data()
 }
 
-results <- pmap_df(ids, alm)
 
-qry <- try(altmetrics(doi=midoi,apikey=mi.key))
+altmetric.results <- pmap_df(ids, alm)
 
-
-
-
-
-require(textcat)
-require(RJSONIO)
-require(rcrossref)
-require(xml2)
-##require(dplyr)
-require(tidyverse)
-require(gdata)
-
-
-mi.key <- ""
+save(file=sprintf("%s/ISI-altmetric-score.rda",Rdata.dir),altmetric.results)
