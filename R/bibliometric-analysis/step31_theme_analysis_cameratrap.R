@@ -58,9 +58,7 @@ cat(file=output.arch,
 quien <- rep(c("ADA / JR","ADA / IZZA","IZZA / JR"),45)[1:nrow(oslc)]
 names(quien) <- names(oslc)
 
-
 for (k in names(oslc)) {
-
   cat(file=output.arch,append=T,
 sprintf("|[%s](http://doi.org/%s) | %s | %s |\n", ISI.search.df[as.numeric(k),"TI"], ISI.search.df[as.numeric(k),"DI"],oslc[k],quien[k]) )
 

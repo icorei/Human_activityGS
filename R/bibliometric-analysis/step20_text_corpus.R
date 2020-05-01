@@ -101,6 +101,7 @@ for (target.grp in unique(ISI.search.df$search.group)) {
   word.list <- table(unlist(ISI.bigram))
 
   assign(sprintf("%s.corpus",target.grp),ISI.corpus)
+   assign(sprintf("%s.tokens",target.grp),ISI.toks)
   assign(sprintf("%s.bigram",target.grp),ISI.bigram)
   assign(sprintf("%s.wlist",target.grp),word.list)
   ## save to a Rdata object:
