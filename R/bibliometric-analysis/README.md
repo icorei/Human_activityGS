@@ -100,3 +100,7 @@ rmarkdown::render(sprintf("%s/%s",work.dir,mi.arch), "word_document",output_dir=
 
 
 * Is it possible to run the Web of science searches through the clarivate APIs? [Check this](https://www.programmableweb.com/api/clarivate-web-science-expanded) and [here](https://clarivate.com/webofsciencegroup/solutions/xml-and-apis/)
+
+
+* Can we use pubs X topics table (gamma) as predictors of the values for 4WH, threat, action, research, etc? Maybe we would need to reduce the dimensions in the table excluding or combining (clustering?) highly correlated topics. We want to know which combinations of topics are associated with How or Which, etc... Alternatively, look at the frequency of these for each topic. Not sure which is the best way here.
+* Measure the mean degree of separation between CT and CP topics, or the number of papers which first order or second order cites (including the reviews as possible aggregators...) 

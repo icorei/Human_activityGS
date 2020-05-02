@@ -47,34 +47,40 @@ threats_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/threats.liwc",scrip
 conservation_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/conservation.liwc",script.dir), format = "LIWC")
 interaction_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/interaction.liwc",script.dir), format = "LIWC")
 habitat_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/habitat.liwc",script.dir), format = "LIWC")
-##region_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/region.liwc",script.dir), format = "LIWC")
-##taxonomic_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/taxonomic.liwc",script.dir), format = "LIWC")
+region_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/region.liwc",script.dir), format = "LIWC")
+taxonomic_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/taxonomic.liwc",script.dir), format = "LIWC")
 
 
-CT.bigram <- tokens_select(CT.bigram, species.words, selection = 'remove')
-CT.bigram <- tokens_select(CT.bigram, regions.words, selection = 'remove')
+## Apply dictionaries to clean up the vocabulary
+CT.bigram <- tokens_select(CT.bigram, exclude.words, selection = 'remove')
+##CT.bigram <- tokens_select(CT.bigram, species.words, selection = 'remove')
+##CT.bigram <- tokens_select(CT.bigram, regions.words, selection = 'remove')
 
 CT.dfm <- dfm(CT.bigram, thesaurus = conservation_thesaurus)
 CT.dfm <- dfm_lookup(CT.dfm,dictionary = status_thesaurus,exclusive=FALSE)
 CT.dfm <- dfm_lookup(CT.dfm,dictionary = threats_thesaurus,exclusive=FALSE)
 CT.dfm <- dfm_lookup(CT.dfm,dictionary = habitat_thesaurus,exclusive=FALSE)
 CT.dfm <- dfm_lookup(CT.dfm,dictionary = interaction_thesaurus,exclusive=FALSE)
+CT.dfm <- dfm_lookup(CT.dfm,dictionary = taxonomic_thesaurus,exclusive=FALSE)
+CT.dfm <- dfm_lookup(CT.dfm,dictionary = region_thesaurus,exclusive=FALSE)
 
 
-CP.bigram <- tokens_select(CP.bigram, species.words, selection = 'remove')
-CP.bigram <- tokens_select(CP.bigram, regions.words, selection = 'remove')
+CP.bigram <- tokens_select(CP.bigram, exclude.words, selection = 'remove')
 
 CP.dfm <- dfm(CP.bigram, thesaurus = conservation_thesaurus)
 CP.dfm <- dfm_lookup(CP.dfm,dictionary = status_thesaurus,exclusive=FALSE)
 CP.dfm <- dfm_lookup(CP.dfm,dictionary = threats_thesaurus,exclusive=FALSE)
 CP.dfm <- dfm_lookup(CP.dfm,dictionary = habitat_thesaurus,exclusive=FALSE)
 CP.dfm <- dfm_lookup(CP.dfm,dictionary = interaction_thesaurus,exclusive=FALSE)
+CP.dfm <- dfm_lookup(CP.dfm,dictionary = taxonomic_thesaurus,exclusive=FALSE)
+CP.dfm <- dfm_lookup(CP.dfm,dictionary = region_thesaurus,exclusive=FALSE)
 
 ##tmp.dfm <- dfm_remove(tmp.dfm, pattern = taxonomic_thesaurus)
 ##tmp.dfm <- dfm_remove(tmp.dfm, pattern = region_thesaurus)
 
 CT.dfm
 
+## create document term matrix for topic model analysis using topics with at least 20 occurrences
 CT.dfm <- dfm_trim(CT.dfm, min_termfreq = 20)
 
 CP.dfm <- dfm_trim(CP.dfm, min_termfreq = 20)
@@ -84,11 +90,25 @@ CT.dtm <- convert(CT.dfm, to = "topicmodels")
 
 CP.dtm <- convert(CP.dfm, to = "topicmodels")
 
-if (!exists("result")) {
+
+## Search for an optimal number of topics for the models
+
+if (file.exists(sprintf("%s/Topic-number-results.rda",Rdata.dir))) {
+  load(file=sprintf("%s/Topic-number-results.rda",Rdata.dir))
+} else {
   ## how many cores can we use?
   ## on mac osx use: sysctl -n hw.ncpu; on Linux: nproc
-  result <- FindTopicsNumber(
+  optimTopic.CT <- FindTopicsNumber(
     CT.dtm,
+    topics = seq(from = 5, to = 150, by = 5),
+    metrics = c("Griffiths2004", "CaoJuan2009", "Arun2010", "Deveaud2014"),
+    method = "Gibbs",
+    control = list(seed = 77),
+    mc.cores = 6,
+    verbose = TRUE
+  )
+  optimTopic.CP <- FindTopicsNumber(
+    CP.dtm,
     topics = seq(from = 5, to = 150, by = 5),
     metrics = c("Griffiths2004", "CaoJuan2009", "Arun2010", "Deveaud2014"),
     method = "Gibbs",
@@ -96,13 +116,17 @@ if (!exists("result")) {
     mc.cores = 5,
     verbose = TRUE
   )
+  save(file=sprintf("%s/Topic-number-results.rda",Rdata.dir), optimTopic.CT, optimTopic.CP)
 }
 
-FindTopicsNumber_plot(result)
+## the answer to the question of the universe, life, etc is...
+FindTopicsNumber_plot(optimTopic.CP)
+FindTopicsNumber_plot(optimTopic.CT)
 
+## Now fit the models
 CT.lda <- LDA(CT.dtm, control=list(seed=0), k = 45)
 
-CP.lda <- LDA(CP.dtm, control=list(seed=0), k = 30)
+CP.lda <- LDA(CP.dtm, control=list(seed=0), k = 45)
 
 tt <- topics(CT.lda)
 docvars(CT.dfm, 'topic') <- tt[match(row.names(CT.dfm),names(tt))]
@@ -118,6 +142,13 @@ top_n(10, beta) %>%
 ungroup() %>%
 arrange(topic, -beta)
 
+
+CP.top_terms <- CP.topics %>%
+group_by(topic) %>%
+top_n(10, beta) %>%
+ungroup() %>%
+arrange(topic, -beta)
+
 CT.top_terms %>%
 mutate(term = reorder_within(term, beta, topic)) %>%
 ggplot(aes(term, beta, fill = factor(topic))) +
@@ -125,6 +156,30 @@ geom_col(show.legend = FALSE) +
 facet_wrap(~ topic, scales = "free") +
 coord_flip() +
 scale_x_reordered()
+
+## This is a table for the Appendix...
+## some topics do not have any term above 0.1
+## maybe topics can be classified as "dominated by one term", "codominated by n terms", "heterogeneous topics"
+CT.top_terms %>% filter(beta>.05) %>% print.AsIs()
+CP.top_terms %>% filter(beta>.05) %>% print.AsIs()
+
+
+save(file=sprintf("%s/ISI-lda.rda",Rdata.dir),CT.lda,CP.lda)
+
+
+
+
+
+
+
+####
+## wvwvwvwv old code below wvwvwvwv
+####
+
+
+
+
+
 
 ##topic.names <- c("Frst cons","Bio inter","Pop mngmnt","Behaviour","Diversity","PAs","Occu","Density","Hum imp")
 
@@ -138,9 +193,6 @@ CT.top_terms %>% filter(topic %in% c(11) & beta>.1)
 CT.top_terms %>% filter(topic %in% c(36) & beta>.1)
 CT.top_terms %>% filter(topic %in% c(37,41) & beta>.1)
 
-## some topics do not have any term above 0.1
-## maybe topics can be classified as "dominated by one term", "codominated by n terms", "heterogeneous topics"
-CT.top_terms %>% filter(beta>.1) %>% print.AsIs()
 
 ## times cited per topic
 boxplot(log1p(ISI.search.df$TC[match(names(tt),ISI.search.df$UT)])~tt)
