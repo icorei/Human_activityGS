@@ -1,0 +1,35 @@
+-- Create database
+-- activate postgis extension
+CREATE TABLE IF NOT EXISTS rlts_species
+(taxonid integer PRIMARY KEY,
+  scientific_name varchar(255),
+kingdom_name varchar(255),
+phylum_name varchar(255),
+class_name varchar(255),
+order_name varchar(255),
+family_name varchar(255),
+genus_name varchar(255),
+main_common_name   varchar(255),
+authority          varchar(255),
+published_year     integer,
+assessment_date    varchar(255),
+category           varchar(255),
+criteria           varchar(255),
+population_trend   varchar(255),
+marine_system      boolean,
+freshwater_system  boolean,
+terrestrial_system boolean,
+assessor           varchar(255),
+reviewer           varchar(255),
+aoo_km2            varchar(255),
+eoo_km2            varchar(255),
+elevation_upper    varchar(255),
+elevation_lower    varchar(255),
+depth_upper        varchar(255),
+depth_lower        varchar(255),
+errata_flag        varchar(255),
+errata_reason      text,
+amended_flag       varchar(255),
+amended_reason     text
+
+);

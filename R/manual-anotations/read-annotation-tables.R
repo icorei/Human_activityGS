@@ -1,4 +1,14 @@
-#!R --vanilla
+#!R --vanilla --args ~/proyectos/IVIC/the-big-picture
+
+args <- commandArgs(TRUE)
+if (!exists("script.dir")) {
+  if (!is.na(args[1])) {
+    script.dir <- args[1]
+  } else {
+    script.dir <- readline(prompt="Enter path to script directory: ")
+  }
+}
+
 library(googlesheets4)
 require(dplyr)
 require("RPostgreSQL")
@@ -6,7 +16,21 @@ require("RPostgreSQL")
 require(httr)
 require(jsonlite)
 require(stringr)
+library(tidytext)
+require(MASS)
+require(Hmisc)
+require(viridis)
+
 options(stringsAsFactors = FALSE)
+
+work.dir <- sprintf("%s/R/bibliometric-analysis", script.dir)
+Rdata.dir <- sprintf("%s/Rdata", script.dir)
+
+setwd(work.dir)
+
+## Load data from previous step:
+(load(file=sprintf("%s/ISI-search-df.rda",Rdata.dir)))
+(load(file=sprintf("%s/ISI-lda.rda",Rdata.dir)))
 
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(drv, dbname = "IUCN",
@@ -22,16 +46,19 @@ gs.table <- read_sheet("1tNYpap7JJfXzoMebttLmpWwhdBN3mwt2GOcWh8oIpQk",sheet="ASM
 gs.ADA <- subset(gs.table,rowSums(is.na(gs.table))<10)
 
 gs.table <- read_sheet("1tNYpap7JJfXzoMebttLmpWwhdBN3mwt2GOcWh8oIpQk",sheet="General information")
-
+gs.ADA$UT <- ISI.search.df$UT[match(gs.ADA$cameratrap_studies,ISI.search.df$TI)]
+gs.IZZA$UT <- ISI.search.df$UT[match(gs.IZZA$cameratrap_studies,ISI.search.df$TI)]
 # Check what, where, etc
 dts <- rbind(
 	data.frame(TI=substr(gs.ADA$cameratrap_studies,1,20),
+  UT=gs.ADA$UT,
 		What=grepl("what",gs.ADA$`4WH`),
 		Which=grepl("which",gs.ADA$`4WH`),
 		Where=grepl("where",gs.ADA$`4WH`),
 		When=grepl("when",gs.ADA$`4WH`),
 		How=grepl("how",gs.ADA$`4WH`)),
 	data.frame(TI=substr(gs.IZZA$cameratrap_studies,1,20),
+  UT=gs.IZZA$UT,
 		What=grepl("what",gs.IZZA$`4WH`),
 		Which=grepl("which",gs.IZZA$`4WH`),
 		Where=grepl("where",gs.IZZA$`4WH`),
@@ -39,23 +66,84 @@ dts <- rbind(
 		How=grepl("how",gs.IZZA$`4WH`)))
 
 ## this returns 1 if ALL reviewers include it, and 0.5 if only one out of two does, etc.
- dts %>% group_by(TI) %>% summarise(What=mean(What), Which=mean(Which), Where=mean(Where), When=mean(When), How=mean(How)) %>% print.AsIs()
+ dts %>% group_by(UT) %>% summarise(What=mean(What), Which=mean(Which), Where=mean(Where), When=mean(When), How=mean(How)) %>% print.AsIs()
+
+
+lda_gamma <- tidy(CT.lda, matrix = "gamma")
+
+dts %>% filter(Where>0) %>% select(UT) -> slc
+lda_gamma %>% filter(document %in% slc$UT) %>% group_by(topic) %>% summarise(gamma=sum(gamma)) %>%
+ggplot(aes(topic, gamma, fill = factor(topic))) +
+geom_col(show.legend = FALSE)  +
+coord_flip() +
+scale_x_reordered()
+
+
+## Linear discriminant analysis:
+dts <- rbind(
+	data.frame(TI=substr(gs.ADA$cameratrap_studies,1,20),
+  UT=gs.ADA$UT,WH=gs.ADA$`4WH`),
+	data.frame(TI=substr(gs.IZZA$cameratrap_studies,1,20),
+  UT=gs.IZZA$UT,WH=gs.IZZA$`4WH`))
+
+y <- dts$WH
+x <- CT.lda@gamma[match(dts$UT,CT.lda@documents),]
+colnames(x) <- sprintf("CT%02d",1:45)
+
+clr1 <- viridis(5)
+v <- varclus(x, similarity="spear")  # spearman is the default anyway
+v    # invokes print.varclus
+print(round(v$sim,2))
+plot(v)
+
+slc <- !duplicated(cutree(v$hclust,h=.5))
+x1 <- data.frame(x[,slc])
+x1$y <- y
+mdl <- lda(y~.,data=x1)
+prd <- predict(mdl)
+ldahist(data = prd$x[,1], g=prd$class)
+plot(prd$x[,1],prd$x[,2],col=clr1[as.numeric(prd$class)],pch=19,cex=1.5)
+legend("topright",levels(prd$class),fill=clr1)
+
+subset(mdl$scaling[,1:2],(abs(mdl$scaling[,1])>150 | abs(mdl$scaling[,2])>150) )
+
+
+
+
+CT.topics <- tidy(CT.lda, matrix = "beta")
+
+
+CT.top_terms <- CT.topics %>%
+group_by(topic) %>%
+top_n(10, beta) %>%
+ungroup() %>%
+arrange(topic, -beta)
+
+
+CT.top_terms %>% filter(beta>.1 & topic %in% c(2,4,15,18,19,29,41,44)) %>% print.AsIs()
+
+
+
+
+
+
+
+
+
+
+plot(mdl$scaling[,c(1,3)],col="grey77",pch=3)
+text(mdl$scaling[,c(1,3)],sprintf("CT%02d",seq(along=x[1,])[slc]))
+
+
+plot(mdl$scaling[,c(2,4)],col=clr1[as.numeric(as.factor(y))],pch=19,cex=2)
+
+z <- lda(Sp ~ ., Iris, prior = c(1,1,1)/3, subset = train)
+    predict(z, Iris[-train, ])$class
 
 ## Need to use more standard vocabulary for this
 sort(table(unlist(strsplit(gs.table$cameratrap_data,":"))))
-## please include complete genus names
-sort(table(unlist(strsplit(gs.table$species,":"))))
-spp.names <- unique(unlist(strsplit(gs.table$species,":")))
-spp.names <- unique(gsub("  "," ",str_trim(spp.names)))
 
-spps <- c()
-for (spp in spp.names) {
-	spps <- c(spps,postgresqlEscapeStrings(con, spp))
 
-}
-
-qry <- sprintf("SELECT * FROM rlts_spp_taxonomy WHERE scientific_name IN ('%s')", paste(spps,collapse="','"))
-rslts<- dbGetQuery(con,qry)
 
 table(rslts$category)
 table(rslts$class_name)

@@ -52,28 +52,37 @@ taxonomic_thesaurus <- dictionary(file = sprintf("%s/dict/liwc/taxonomic.liwc",s
 
 
 ## Apply dictionaries to clean up the vocabulary
+## One important issue is whether we include or exclude taxonomic and regional terms
+
 CT.bigram <- tokens_select(CT.bigram, exclude.words, selection = 'remove')
-##CT.bigram <- tokens_select(CT.bigram, species.words, selection = 'remove')
-##CT.bigram <- tokens_select(CT.bigram, regions.words, selection = 'remove')
+CT.bigram <- tokens_select(CT.bigram, species.words, selection = 'remove')
+CT.bigram <- tokens_select(CT.bigram, regions.words, selection = 'remove')
 
 CT.dfm <- dfm(CT.bigram, thesaurus = conservation_thesaurus)
 CT.dfm <- dfm_lookup(CT.dfm,dictionary = status_thesaurus,exclusive=FALSE)
 CT.dfm <- dfm_lookup(CT.dfm,dictionary = threats_thesaurus,exclusive=FALSE)
 CT.dfm <- dfm_lookup(CT.dfm,dictionary = habitat_thesaurus,exclusive=FALSE)
 CT.dfm <- dfm_lookup(CT.dfm,dictionary = interaction_thesaurus,exclusive=FALSE)
-CT.dfm <- dfm_lookup(CT.dfm,dictionary = taxonomic_thesaurus,exclusive=FALSE)
-CT.dfm <- dfm_lookup(CT.dfm,dictionary = region_thesaurus,exclusive=FALSE)
 
+## include or exclude?
+##CT.dfm <- dfm_lookup(CT.dfm,dictionary = taxonomic_thesaurus,exclusive=FALSE)
+##CT.dfm <- dfm_lookup(CT.dfm,dictionary = region_thesaurus,exclusive=FALSE)
+CT.dfm <- dfm_select(CT.dfm,pattern = taxonomic_thesaurus,selection="remove")
+CT.dfm <- dfm_select(CT.dfm,pattern = region_thesaurus,selection="remove")
 
 CP.bigram <- tokens_select(CP.bigram, exclude.words, selection = 'remove')
-
+CP.bigram <- tokens_select(CP.bigram, species.words, selection = 'remove')
+CP.bigram <- tokens_select(CP.bigram, regions.words, selection = 'remove')
 CP.dfm <- dfm(CP.bigram, thesaurus = conservation_thesaurus)
 CP.dfm <- dfm_lookup(CP.dfm,dictionary = status_thesaurus,exclusive=FALSE)
 CP.dfm <- dfm_lookup(CP.dfm,dictionary = threats_thesaurus,exclusive=FALSE)
 CP.dfm <- dfm_lookup(CP.dfm,dictionary = habitat_thesaurus,exclusive=FALSE)
 CP.dfm <- dfm_lookup(CP.dfm,dictionary = interaction_thesaurus,exclusive=FALSE)
-CP.dfm <- dfm_lookup(CP.dfm,dictionary = taxonomic_thesaurus,exclusive=FALSE)
-CP.dfm <- dfm_lookup(CP.dfm,dictionary = region_thesaurus,exclusive=FALSE)
+
+##CP.dfm <- dfm_lookup(CP.dfm,dictionary = taxonomic_thesaurus,exclusive=FALSE)
+##CP.dfm <- dfm_lookup(CP.dfm,dictionary = region_thesaurus,exclusive=FALSE)
+CP.dfm <- dfm_select(CP.dfm,pattern = taxonomic_thesaurus,selection="remove")
+CP.dfm <- dfm_select(CP.dfm,pattern = region_thesaurus,selection="remove")
 
 ##tmp.dfm <- dfm_remove(tmp.dfm, pattern = taxonomic_thesaurus)
 ##tmp.dfm <- dfm_remove(tmp.dfm, pattern = region_thesaurus)
@@ -128,6 +137,10 @@ CT.lda <- LDA(CT.dtm, control=list(seed=0), k = 45)
 
 CP.lda <- LDA(CP.dtm, control=list(seed=0), k = 45)
 
+
+save(file=sprintf("%s/ISI-lda.rda",Rdata.dir),CT.lda,CP.lda,optimTopic.CT, optimTopic.CP)
+
+
 tt <- topics(CT.lda)
 docvars(CT.dfm, 'topic') <- tt[match(row.names(CT.dfm),names(tt))]
 
@@ -162,9 +175,6 @@ scale_x_reordered()
 ## maybe topics can be classified as "dominated by one term", "codominated by n terms", "heterogeneous topics"
 CT.top_terms %>% filter(beta>.05) %>% print.AsIs()
 CP.top_terms %>% filter(beta>.05) %>% print.AsIs()
-
-
-save(file=sprintf("%s/ISI-lda.rda",Rdata.dir),CT.lda,CP.lda)
 
 
 

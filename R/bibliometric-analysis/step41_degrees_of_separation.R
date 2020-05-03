@@ -63,13 +63,10 @@ CP.clus <- hclust(CP.dist)
 
 plot(CT.clus)
 abline(h=1600)
-CT.grp <- cutree(CT.clus,h=1600)
+CT.grp <- cutree(CT.clus,k=8)
 plot(CP.clus)
-abline(h=1400)
-CP.grp <- cutree(CP.clus,h=1400)
-
-## cluster
-plot(CT.clus, cex = 1)
+abline(h=610)
+CP.grp <- cutree(CP.clus,k=8)
 
 
 CT.topics <- tidy(CT.lda, matrix = "beta")
@@ -191,7 +188,7 @@ for (k in levels(my.topic)) {
         data.frame(k,l, mu=mean(1/(ss)), sg=sd(1/ss), d1=sum(ss %in% 1), d2=sum(ss %in% 2), d3=sum(ss %in% 3),total=length(ss)))
   }
 }
-subset(degSep,k %in% "CT20" & grepl("CP2",l))
+subset(degSep,k %in% "CT28" & grepl("CP4",l))
 
 degSep$dS <- with(degSep,d1+(d2/10)+(d3/100))
 mtz <- with(degSep,tapply(dS,list(l,k),sum))
@@ -199,15 +196,17 @@ mtz <- with(degSep,tapply(dS,list(l,k),sum))
 slc.mtz <- mtz[grep("CP",rownames(mtz)),grep("CT",colnames(mtz))]
 ##slc.mtz[slc.mtz<.15] <- 0
 slc.mtz <- slc.mtz[rowSums(slc.mtz,na.rm=T)>0,colSums(slc.mtz,na.rm=T)>0]
+## order rows and columns to get more prominent links on top
 slc.mtz <- slc.mtz[order(rowSums(slc.mtz)),order(colSums(slc.mtz))]
+
 bprt <- graph_from_incidence_matrix(slc.mtz, directed = FALSE,
        mode = "all", multiple = FALSE,
        weighted = TRUE)
 ##bprt <- permute(bprt,rank(c(rowSums(slc.mtz),colSums(slc.mtz))))
 
 clrs1 <- cividis(15)
-clrs1 <- brewer.pal(6,"Dark2")
-clrs2 <- brewer.pal(6,"Accent")
+clrs1 <- brewer.pal(8,"Dark2")
+clrs2 <- brewer.pal(8,"Accent")
 c1 <- clrs1[CT.grp[match(V(bprt)$name,names(CT.grp))]]
 c2 <- clrs2[CP.grp[match(V(bprt)$name,names(CP.grp))]]
 V(bprt)$color <- ifelse(is.na(c1),ifelse(is.na(c2),"#aaaaaaaa",c2),c1)
@@ -219,6 +218,7 @@ E(bprt)$color <- brewer.pal(8,"Reds")[
 ##E(bprt)$width <- ifelse(E(bprt)$weight>1,2,1)
 E(bprt)$width <- E(bprt)$weight
 
+## layout as circle, but use groups to re-arrange topics
 #l <- layout_as_bipartite(bprt)
 l <- layout_in_circle(bprt)
 #l <- layout_as_tree(bprt)
@@ -253,7 +253,13 @@ plot(bprt,layout=l,edge.arrow.size=.25,  vertex.frame.color=NA, vertex.label.col
   ##mark.groups=list(CT1=names(CT.grp)[CT.grp==1],CT2=names(CT.grp)[CT.grp==2],CT3=names(CT.grp)[CT.grp==3],CT4=names(CT.grp)[CT.grp==4],CT5=names(CT.grp)[CT.grp==5],CT6=names(CT.grp)[CT.grp==6]),
   vertex.label.dist=0)##, vertex.color="gold", vertex.size=15)
 
-CP.top_terms %>% filter(topic %in% c(3,9,26,27,22) & beta>.1)
+CP.top_terms %>% filter(topic %in% c(23,45,37,42,40,5,25) & beta>.1)
+
+
+##Why marine? do we need to exclude these?
+## it looks like how to apply terrestrial conservation to marine cons.
+subset(ISI.search.df,topic %in% "CP45")$TI
+table(ISI.search.df$topic,grepl("MARINE|OCEAN",ISI.search.df$WC))
 
 CT.top_terms %>% filter(topic %in% c(15,29,21) & beta>.1)
 
