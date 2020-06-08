@@ -11,7 +11,7 @@ require(fractaldim)
 
 
 ##leer shapefiles (cambiar nombres de la carpeta)
-grd <- shapefile("D:/PROJECTS/Gran Sabana 2018/KavaGrid.shp")
+grd <- shapefile("D:/PROJECTS/Gran Sabana 2018/grid2km_Kavanayen.shp")
 izza <- shapefile("D:/PROJECTS/Gran Sabana 2018/area_Kav.shp")
 
 
@@ -30,7 +30,7 @@ frs.c <- subset(frs,frs@data$CONFIDENCE>40)
 vbsq <- raster("D:/PROJECTS/Gran Sabana 2018/bosque_clip.tif")
 bbsq <- vbsq>40
 
-## calcular dimension fractal en cada cuadrado del diseño
+## calcular dimension fractal en cada cuadrado del diseño segun Ritche
 
 fds <- hs <- c()
 for (k in 7:10){
@@ -55,6 +55,53 @@ for (k in 7:10){
   plot(hs,fds)
   
 }
+
+## ALTERNATIVA ##Funcion para calcular diemension fractal dentro del bloque segun Gneiting 2012.
+####
+
+#patch
+#k=1
+#crop(vbsq,extent(subset(grd,Id==k)))
+
+#ClassStat(ptch, latlon=TRUE)[2,"mean.frac.dim.index"]                   
+
+fds <- hs <- c()
+for (k in 7:10){
+  ptch <- crop(vbsq,extent(subset(grd,Id==k)),
+               snap="near")>40
+  
+  
+  hs <- c(hs,sum(values(ptch),na.rm=T)/ncell(ptch))
+  fds <- c(fds,ClassStat(ptch, latlon=TRUE)[2,"perimeter.area.frac.dim"])
+  
+  plot(hs,fds)
+  
+}
+
+fds <- hs <- c()
+for (Id in 1:6){
+  ptch <- crop(vbsq,extent(subset(grd,cuadrado==Id)),
+               snap="near")
+  if (nrow(ptch)!=ncol(ptch))
+    ptch <- crop(vbsq,extent(subset(grd,cuadrado==k)),
+                 snap="out")
+  
+  hs <- c(hs,sum(values(ptch),na.rm=T)/ncell(ptch))
+  mat <- matrix(values(ptch),ncol=ncol(ptch),byrow=T)+0
+  if (nrow(ptch)==ncol(ptch)) {
+    fds <- c(fds,(fd.estim.filter1(mat))$fd)
+  } else {
+    if (nrow(mat)>ncol(mat))
+      mat <- mat[-1,]
+    if (ncol(mat)>nrow(mat))
+      mat <- mat[,-1]
+    fds <- c(fds,(fd.estim.filter1(mat))$fd)
+  }
+  plot(hs,fds)
+  
+}
+###########
+
 
 ##mapa del area de estudio con diseño de cuadrados seleccionados
 ## h: proporcion de bosque en el paisaje
@@ -127,3 +174,6 @@ with(aggregate(coordinates(grd),by=list(grd$cuadrado),median),
 points(frs.c,pch=3,cex=.3,col=2)
 
 text(grd,paste(dts$bosque,dts$fuego),cex=.50)
+
+
+
