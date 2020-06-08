@@ -8,8 +8,9 @@ Abstract Overexploitation of bushmeat in tropical forests has increased in recen
 
 Contains:
 
-* shp. of study area, Gran Sabana and Canaima NP
-* data on hunting
+* shp. of study area, Gran Sabana and Canaima NP and  10 blocks of work
+* data on hunting _ interviews
+* data on species occurance
 
 Also some aditional figures and tables
 

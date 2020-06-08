@@ -6,14 +6,14 @@ require(raster)
 require(gdata)
 require(foreign)
 
-##load data (change the name of archive)
+##load data (change the name of archive, look for location on the computer)
 #spacial data
 load("D:/PROJECTS/Gran Sabana/Metodologia/redisenomuestral/rasters_GS.rda")
 load("D:/PROJECTS/Gran Sabana/Metodologia/redisenomuestral/fuegos_GS.rda")
 
 #data
-EventosGranSabana_mam_ras <- read.csv2("D:/PHD_statistic/EventosGranSabana/EventosGranSabana_CAM_RAS.csv")
-camerasGS <- read.csv2("D:/PHD_statistic/TODO/Cameras_short_2019.csv")
+grid2km_Kavanayen.shp2("D:/PHD_statistic/EventosGranSabana/Eventos_GS_CAM_RAS_2019.csv")
+camerasGS <- read.csv2("D:/PHD_statistic/EventosGranSabana/Camaras_GS_short_2019.csv")
 
 #bosque y fragmentacion
 vbsq <- raster("D:/PROJECTS/Gran Sabana/Metodologia/GS_studyarea_Izza/TREE/MOD44B.2010.GS.TREE.tif")
@@ -36,7 +36,6 @@ GS <- merge(EventosGranSabana_mam_ras,camerasGS,by.x=c("bloque","periodo","camar
             by.y=c("bloque","period","camera"),all.y=T)
 tt <- table(paste(GS$bloque,GS$periodo,GS$camara),GS$species)
 head(tt)
-
 
 tt <- with(GS,tapply(paste(dieta,periodo,camara),list(species),function(x)length(unique(x))))
 tt[is.na(tt)] <- 0
@@ -61,7 +60,9 @@ head(tt)
 
 t1 <- vegdist(tt,"chao")
 
-caseria
+#caseria
 adonis(t1~caza.celda2+conuco.bloque,t2)
 adonis(t1~caza.bloque+H*h,t2)
+adonis(t1~h+caza.bloque+conuco.bloque+conuco.dist.m,t2)
+adonis(t1~caza.bloque+conuco.bloque+conuco.dist.m,t2)
 
