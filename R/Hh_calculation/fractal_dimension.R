@@ -23,23 +23,45 @@ if (Sys.getenv("WORKDIR") == "") {
 
 ## set working directory
 setwd(work.dir)
+GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
+if (file.exists(GIS.data)) {
+   load(GIS.data)
+}
 
-# unzip shapefiles from local repository to working directory
-unzip(sprintf("%s/input/sampling/grid2km_Kavanayen.zip",script.dir))
-unzip(sprintf("%s/input/sampling/grid2km_Warapata.zip",script.dir))
+if (!exists("grd")) {
+   # unzip shapefiles from local repository to working directory
+   unzip(sprintf("%s/input/sampling/grid2km_Kavanayen.zip",script.dir))
+   unzip(sprintf("%s/input/sampling/grid2km_Warapata.zip",script.dir))
 
-## read both grids and join them
-grd1 <- shapefile("grid2km_Warapata.shp")
-grd2 <- shapefile("grid2km_Kavanayen.shp")
-grd <- rbind(grd1,grd2)
+   ## read both grids and join them
+   grd1 <- shapefile("grid2km_Warapata.shp")
+   grd2 <- shapefile("grid2km_Kavanayen.shp")
+   grd <- rbind(grd1,grd2)
+   save(file=GIS.data,grd)
+}
 
 ##unzip(sprintf("%s/input/sampling/Canaima.zip",script.dir))
 ##unzip(sprintf("%s/input/sampling/GS_teritory.zip",script.dir))
 ##unzip(sprintf("%s/input/sampling/area_powierzchnia.zip",script.dir))
 ##unzip(sprintf("%s/input/sampling/area_Kav.zip",script.dir))
+if (!exists("vbsq")) {
+   vbsq <- raster("GFC-2019-v1.7/Hansen_GFC-2019-v1.7_treecover2000.tif")
+   r1 <- aggregate(vbsq,50)
+   vbsq <- crop(vbsq,grd)
+   rbsq <- crop(r1,grd)
+   save(file=GIS.data,grd,vbsq,rbsq)
+}
 
-vbsq <- raster("GFC-2019-v1.7/Hansen_GFC-2019-v1.7_treecover2000.tif")
-vbsq <- crop(vbsq,grd)
+
+if (!exists("frs.c")) {
+   frs <- shapefile("GS_M6_FIRES.shp")
+   ## cortar capa de fuego, usar solo datos con CONFIDENCE mayor a 40
+   frs.c <- subset(frs,frs@data$confidence>40)
+   frs.c@data$fch <- chron(dates.=frs.c@data$acq_date,format="y/m/d")
+      save(file=GIS.data,grd,vbsq,frs.c)
+}
+
+
 plot(vbsq)
 plot(grd,add=T)
 
@@ -79,10 +101,6 @@ text(dts$hs,dts$fda,1:10,adj=2)
 ## fuego
 ###########
 
-frs <- shapefile("GS_M6_FIRES.shp")
-## cortar capa de fuego, usar solo datos con CONFIDENCE mayor a 40
-frs.c <- subset(frs,frs@data$confidence>40)
-frs.c@data$fch <- chron(dates.=frs.c@data$acq_date,format="y/m/d")
 plot(months(frs.c@data$fch))
 plot(years(frs.c@data$fch))
 table(months(frs.c@data$fch),years(frs.c@data$fch))
