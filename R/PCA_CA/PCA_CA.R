@@ -12,7 +12,7 @@
 ##Es decir, no hay test estadisticos que nos permitan evaluar la significancia de las 
 ##estructuras detectadas.
 
-##Metodos evaluados:
+##Metodos evaluados::
 
 ##PCA=Es el principal metodo que utiliza "eignvector". Trabaja con datos brutos y cuantitativos
 ##conserva las distancias euclideanas entre los sitios
