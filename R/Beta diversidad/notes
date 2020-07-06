@@ -1,0 +1,138 @@
+Model usado para las celdas: oecosimu(tt,nestedtemp,"r00", nsimul = 1000)
+
+
+Call: oecosimu(comm = tt, nestfun = nestedtemp, method = "r00", nsimul = 1000)
+
+nullmodel method ‘r00’ with 1000 simulations
+
+alternative hypothesis: statistic is less or greater than simulated values
+
+nestedness temperature: 15.60648 
+with matrix fill 0.3678161 
+
+            statistic       z   mean   2.5%    50% 97.5% Pr(sim.)    
+temperature    15.606 -7.3107 58.985 47.327 59.269 70.39 0.000999 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Warning message:
+
+
+Herbivores:
+> nestedbetasor(tt)
+  turnover nestedness   sorensen 
+0.05014327 0.09382058 0.14396385 
+> out <-nestedtemp(tt)
+> out
+nestedness temperature: 13.23725 
+with matrix fill 0.4166667 
+
+Carnivores:
+> nestedbetasor(tt)
+  turnover nestedness   sorensen 
+ 0.1020408  0.4035772  0.5056180 
+> out <-nestedtemp(tt)
+> out
+nestedness temperature: 6.010545 
+with matrix fill 0.3333333 
+> plot (out)
+> plot(out, kind="incid", name=T)
+
+Insecitores:
+> nestedbetasor(tt)
+  turnover nestedness   sorensen 
+ 0.2162162  0.2837838  0.5000000 
+> out <-nestedtemp(tt)
+> out
+nestedness temperature: 16.43069 
+with matrix fill 0.4444444 
+> plot (out)
+> plot(out, kind="incid", name=T)
+
+Omnivores:
+> nestedbetasor(tt)
+  turnover nestedness   sorensen 
+ 0.2727273  0.2193362  0.4920635 
+> out <-nestedtemp(tt)
+> out
+nestedness temperature: 16.73945 
+with matrix fill 0.3194444 
+> plot (out)
+> plot(out, kind="incid", name=T)
+
+##################BLOCKS (menos block 9 y 10)
+
+oecosimu object
+
+Call: oecosimu(comm = tt, nestfun = nestedtemp, method = "quasiswap", nsimul = 1000)
+
+nullmodel method ‘quasiswap’ with 1000 simulations
+
+alternative hypothesis: statistic is less or greater than simulated values
+
+nestedness temperature: 20.27496 
+with matrix fill 0.4444444 
+
+            statistic     z   mean   2.5%    50%  97.5% Pr(sim.)   
+temperature    20.275 3.164 17.331 15.626 17.277 19.331 0.008991 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Warning message:
+In oecosimu(tt, nestedtemp, "quasiswap", nsimul = 1000) :
+  nullmodel transformed 'comm' to binary data
+> oecosimu(tt,nestedtemp,"r00", nsimul = 1000)
+oecosimu object
+
+Call: oecosimu(comm = tt, nestfun = nestedtemp, method = "r00", nsimul = 1000)
+
+nullmodel method ‘r00’ with 1000 simulations
+
+alternative hypothesis: statistic is less or greater than simulated values
+
+nestedness temperature: 19.86458 
+with matrix fill 0.4444444 
+
+            statistic       z   mean   2.5%    50%  97.5% Pr(sim.)    
+temperature    19.865 -6.0686 56.386 44.693 56.348 67.755 0.000999 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#Herbiovores
+
+> nestedbetasor(tt)
+  turnover nestedness   sorensen 
+0.02533333 0.05862657 0.08395990 
+> out <-nestedtemp(tt)
+> out
+nestedness temperature: 14.28386 
+with matrix fill 0.4938272 
+
+
+#Carnivores
+
+> nestedbetasor(tt)
+  turnover nestedness   sorensen 
+ 0.0733945  0.2348247  0.3082192 
+> out <-nestedtemp(tt)
+> out
+nestedness temperature: 7.481307 
+with matrix fill 0.4259259
+
+#Insectivores
+
+ nestedbetasor(tt)
+  turnover nestedness   sorensen 
+0.04225352 0.21457708 0.25683060 
+> out <-nestedtemp(tt)
+> out
+nestedness temperature: 10.81962 
+with matrix fill 0.5555556 
+
+#Omnivores
+
+> nestedbetasor(tt)
+  turnover nestedness   sorensen 
+0.04237288 0.20928275 0.25165563 
+> out <-nestedtemp(tt)
+> out
+nestedness temperature: 4.354274 
+with matrix fill 0.3333333 
