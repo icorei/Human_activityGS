@@ -80,15 +80,25 @@ if (!exists("vbsq")) {
    r0 <- raster("GFC-2019-v1.7/Hansen_GFC-2019-v1.7_lossyear.tif")
    pbsq <- crop(r0,e)
    xy <- xyFromCell(pbsq,1:ncell(pbsq))
-   pbsq1 <- rbind(xy[(values(pbsq) %in% 11:16) & xy[,1] > -61.4,],
-    xy[(values(pbsq) %in% 13:18) & xy[,1] < -61.4,])
+   ## five years prior to sampling
+   pbsq1 <- rbind(xy[(values(pbsq) %in% 12:16) & xy[,1] > -61.4,],
+    xy[(values(pbsq) %in% 14:18) & xy[,1] < -61.4,])
+   ## last five years
+    pbsq2 <- rbind(xy[(values(pbsq) %in% 15:19)])
+
     d0 <- distanceFromPoints(rbsq,pbsq1)
     d1 <- disaggregate(d0,10)
     dist.dbsq <- resample(d1,vbsq)
     if (!inMemory(dist.dbsq))
       dist.dbsq <- readAll(dist.dbsq)
 
-      obj.list <- unique(c(obj.list,"rgrd","vbsq","dist.conucos","dist.dbsq","dist.comunidades"))
+   d0 <- distanceFromPoints(rbsq,pbsq2)
+   d1 <- disaggregate(d0,10)
+   current.dbsq <- resample(d1,vbsq)
+   if (!inMemory(current.dbsq))
+     current.dbsq <- readAll(current.dbsq)
+
+      obj.list <- unique(c(obj.list,"rgrd","vbsq","dist.conucos","dist.dbsq","dist.comunidades","current.dbsq"))
       save(file=GIS.data,list=obj.list)
 
    }
@@ -124,15 +134,22 @@ if (!exists("frs.c")) {
    frs.c <- crop(frs.c,e)
    frs.c@data$fch <- chron(dates.=frs.c@data$acq_date,format="y/m/d")
 
-   frs1 <- rbind(subset(frs.c,years(fch) %in% 2011:2016 & coordinates(frs.c)[,1] > -61.4),
-      subset(frs.c,years(fch) %in% 2013:2018 & coordinates(frs.c)[,1] < -61.4))
+   frs1 <- rbind(subset(frs.c,years(fch) %in% 2012:2016 & coordinates(frs.c)[,1] > -61.4),
+      subset(frs.c,years(fch) %in% 2014:2018 & coordinates(frs.c)[,1] < -61.4))
+   frs2 <- subset(frs.c,years(fch) %in% 2015:2019 )
 
   d0 <- distanceFromPoints(rbsq,frs1)
   d1 <- disaggregate(d0,10)
   dist.frs <- resample(d1,vbsq)
   if (!inMemory(dist.frs))
     dist.frs <- readAll(dist.frs)
-   obj.list <- unique(c(obj.list,"frs.c","dist.frs"))
+
+ d0 <- distanceFromPoints(rbsq,frs2)
+ d1 <- disaggregate(d0,10)
+ current.frs <- resample(d1,vbsq)
+ if (!inMemory(current.frs))
+   current.frs <- readAll(current.frs)
+   obj.list <- unique(c(obj.list,"frs.c","dist.frs","current.frs"))
    save(file=GIS.data,list=obj.list)
 }
 
