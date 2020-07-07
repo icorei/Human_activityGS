@@ -25,16 +25,21 @@ if (Sys.getenv("WORKDIR") == "") {
 setwd(work.dir)
 GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
 if (file.exists(GIS.data)) {
-   load(GIS.data)
+   obj.list <- (load(GIS.data))
+} else {
+   obj.list <- c()
 }
 
 
 if (!exists("conucos")) {
    # unzip shapefiles from local repository to working directory
    unzip(sprintf("%s/input/sampling/conucos.zip",script.dir))
-   ## read both grids and join them
+   unzip(sprintf("%s/input/sampling/comunidades_GS.zip",script.dir))
+      ## read both grids and join them
    conucos <- shapefile("conucos.shp")
-   save(file=GIS.data,conucos)
+   comunidades <- shapefile("comunidades.shp")
+   obj.list <- c(obj.list,"conucos","comunidades")
+   save(file=GIS.data,list=obj.list)
 }
 
 
@@ -46,10 +51,11 @@ if (!exists("grd")) {
    grd1 <- shapefile("grid2km_Warapata.shp")
    grd2 <- shapefile("grid2km_Kavanayen.shp")
    grd <- rbind(grd1,grd2)
-   save(file=GIS.data,conucos,grd)
+   obj.list <- c(obj.list,"grd")
+   save(file=GIS.data,list=obj.list)
 }
 
-f (!exists("vbsq")) {
+if (!exists("vbsq")) {
    r0 <- raster("GFC-2019-v1.7/Hansen_GFC-2019-v1.7_treecover2000.tif")
    r1 <- aggregate(r0,10)
     e <- extent(-61.869,-61.005,5.453,5.750)
@@ -65,6 +71,11 @@ f (!exists("vbsq")) {
    dist.conucos <- resample(d1,vbsq)
    if (!inMemory(dist.conucos))
     dist.conucos <- readAll(dist.conucos)
+   d0 <- distanceFromPoints(rbsq,coordinates(comunidades))
+   d1 <- disaggregate(d0,10)
+   dist.comunidades <- resample(d1,vbsq)
+   if (!inMemory(dist.comunidades))
+    dist.comunidades <- readAll(dist.comunidades)
 
    r0 <- raster("GFC-2019-v1.7/Hansen_GFC-2019-v1.7_lossyear.tif")
    pbsq <- crop(r0,e)
@@ -77,7 +88,32 @@ f (!exists("vbsq")) {
     if (!inMemory(dist.dbsq))
       dist.dbsq <- readAll(dist.dbsq)
 
-   save(file=GIS.data,conucos,grd,vbsq,rgrd,rbsq,dist.conucos,dist.dbsq)
+      obj.list <- unique(c(obj.list,"rgrd","vbsq","dist.conucos","dist.dbsq","dist.comunidades"))
+      save(file=GIS.data,list=obj.list)
+
+   }
+
+if (!exists("dist.caza1")) {
+
+   eventos <- read.csv2(sprintf("%s/input/fieldwork/Eventos_GS_CAM_RAS_2019.csv",script.dir))
+   camaras <- read.csv2(sprintf("%s/input/fieldwork/Camaras_GS_2019.csv",script.dir))
+
+   caza.reciente <- subset(camaras,caza.celda %in% 1)[,c("lon","lat")]
+   d0 <- distanceFromPoints(rbsq,caza.reciente)
+   d1 <- disaggregate(d0,10)
+   dist.caza1 <- resample(d1,vbsq)
+   if (!inMemory(dist.caza1))
+    dist.caza1 <- readAll(dist.caza1)
+   caza.pasada <- subset(camaras,caza.celda %in% 2)[,c("lon","lat")]
+   d0 <- distanceFromPoints(rbsq,caza.pasada)
+   d1 <- disaggregate(d0,10)
+   dist.caza2 <- resample(d1,vbsq)
+   if (!inMemory(dist.caza2))
+    dist.caza2 <- readAll(dist.caza2)
+
+
+   obj.list <- unique(c(obj.list,"eventos","camaras","dist.caza1","dist.caza2"))
+   save(file=GIS.data,list=obj.list)
 }
 
 
@@ -86,7 +122,7 @@ if (!exists("frs.c")) {
    ## cortar capa de fuego, usar solo datos con CONFIDENCE mayor a 40
    frs.c <- subset(frs,frs@data$confidence>40)
    frs.c <- crop(frs.c,e)
-   frs.c@data$fch <- chron(dates.=frs.c@data$acq_date,format="y/m/d
+   frs.c@data$fch <- chron(dates.=frs.c@data$acq_date,format="y/m/d")
 
    frs1 <- rbind(subset(frs.c,years(fch) %in% 2011:2016 & coordinates(frs.c)[,1] > -61.4),
       subset(frs.c,years(fch) %in% 2013:2018 & coordinates(frs.c)[,1] < -61.4))
@@ -96,18 +132,19 @@ if (!exists("frs.c")) {
   dist.frs <- resample(d1,vbsq)
   if (!inMemory(dist.frs))
     dist.frs <- readAll(dist.frs)
-
-    save(file=GIS.data,conucos,grd,vbsq,rgrd,rbsq,dist.conucos,frs.c,dist.dbsq,dist.frs)
+   obj.list <- unique(c(obj.list,"frs.c","dist.frs"))
+   save(file=GIS.data,list=obj.list)
 }
 
 if (!exists("tracks")) {
   tracks <- shapefile("tracks.shp")
   track_points <- shapefile("track_points.shp")
-  save(file=GIS.data,conucos,grd,vbsq,rgrd,rbsq,dist.conucos,frs.c,tracks,track_points,dist.dbsq,dist.frs)
+  obj.list <- unique(c(obj.list,"tracks","track_points"))
+  save(file=GIS.data,list=obj.list)
 }
 
 
 
 
-nL <- raster("nightlights/SVDNB_npp_20140101-20140131_vcmcfg_v10.tif")
-nLights <- crop(nL,grd)
+#nL <- raster("nightlights/SVDNB_npp_20140101-20140131_vcmcfg_v10.tif")
+#nLights <- crop(nL,grd)
