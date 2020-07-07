@@ -1,5 +1,3 @@
-
-
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R C.paca &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R C.olivaceus  &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R C.thous &
@@ -28,3 +26,6 @@ nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R S.ve
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R T.pecari &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R T.terrestris &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R T.tetradactyla &
+nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R T.major &
+nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R L.rufaxilla &
+nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R C.alector &

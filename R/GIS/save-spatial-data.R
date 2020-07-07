@@ -31,7 +31,6 @@ if (file.exists(GIS.data)) {
 }
 
 
-if (!exists("conucos")) {
    # unzip shapefiles from local repository to working directory
    unzip(sprintf("%s/input/sampling/conucos.zip",script.dir))
    unzip(sprintf("%s/input/sampling/comunidades_GS.zip",script.dir))
@@ -40,10 +39,8 @@ if (!exists("conucos")) {
    comunidades <- shapefile("comunidades.shp")
    obj.list <- c(obj.list,"conucos","comunidades")
    save(file=GIS.data,list=obj.list)
-}
 
 
-if (!exists("grd")) {
    # unzip shapefiles from local repository to working directory
    unzip(sprintf("%s/input/sampling/grid2km_Kavanayen.zip",script.dir))
    unzip(sprintf("%s/input/sampling/grid2km_Warapata.zip",script.dir))
@@ -53,9 +50,7 @@ if (!exists("grd")) {
    grd <- rbind(grd1,grd2)
    obj.list <- c(obj.list,"grd")
    save(file=GIS.data,list=obj.list)
-}
 
-if (!exists("vbsq")) {
    r0 <- raster("GFC-2019-v1.7/Hansen_GFC-2019-v1.7_treecover2000.tif")
    r1 <- aggregate(r0,10)
     e <- extent(-61.869,-61.005,5.453,5.750)
@@ -79,12 +74,15 @@ if (!exists("vbsq")) {
 
    r0 <- raster("GFC-2019-v1.7/Hansen_GFC-2019-v1.7_lossyear.tif")
    pbsq <- crop(r0,e)
+   fbsq <- vbsq
+   values(fbsq)[values(pbsq)>0] <- 0
+
    xy <- xyFromCell(pbsq,1:ncell(pbsq))
    ## five years prior to sampling
    pbsq1 <- rbind(xy[(values(pbsq) %in% 12:16) & xy[,1] > -61.4,],
     xy[(values(pbsq) %in% 14:18) & xy[,1] < -61.4,])
    ## last five years
-    pbsq2 <- rbind(xy[(values(pbsq) %in% 15:19)])
+    pbsq2 <- xy[(values(pbsq) %in% 15:19),]
 
     d0 <- distanceFromPoints(rbsq,pbsq1)
     d1 <- disaggregate(d0,10)
@@ -98,14 +96,14 @@ if (!exists("vbsq")) {
    if (!inMemory(current.dbsq))
      current.dbsq <- readAll(current.dbsq)
 
-      obj.list <- unique(c(obj.list,"rgrd","vbsq","dist.conucos","dist.dbsq","dist.comunidades","current.dbsq"))
+      obj.list <- unique(c(obj.list,"rgrd","vbsq","fbsq","dist.conucos","dist.dbsq","dist.comunidades","current.dbsq"))
       save(file=GIS.data,list=obj.list)
 
-   }
 
-if (!exists("dist.caza1")) {
+   eventos <- read.csv2(sprintf("%s/input/fieldwork/Event_GS_CAM_RAS_bird_mam.csv",script.dir))
+   eventos <- subset(eventos,!species %in% "")
+   eventos$species <- droplevels(eventos$species)
 
-   eventos <- read.csv2(sprintf("%s/input/fieldwork/Eventos_GS_CAM_RAS_2019.csv",script.dir))
    camaras <- read.csv2(sprintf("%s/input/fieldwork/Camaras_GS_2019.csv",script.dir))
 
    caza.reciente <- subset(camaras,caza.celda %in% 1)[,c("lon","lat")]
@@ -124,10 +122,7 @@ if (!exists("dist.caza1")) {
 
    obj.list <- unique(c(obj.list,"eventos","camaras","dist.caza1","dist.caza2"))
    save(file=GIS.data,list=obj.list)
-}
 
-
-if (!exists("frs.c")) {
    frs <- shapefile("GS_M6_FIRES.shp")
    ## cortar capa de fuego, usar solo datos con CONFIDENCE mayor a 40
    frs.c <- subset(frs,frs@data$confidence>40)
@@ -151,14 +146,11 @@ if (!exists("frs.c")) {
    current.frs <- readAll(current.frs)
    obj.list <- unique(c(obj.list,"frs.c","dist.frs","current.frs"))
    save(file=GIS.data,list=obj.list)
-}
 
-if (!exists("tracks")) {
   tracks <- shapefile("tracks.shp")
   track_points <- shapefile("track_points.shp")
   obj.list <- unique(c(obj.list,"tracks","track_points"))
   save(file=GIS.data,list=obj.list)
-}
 
 
 

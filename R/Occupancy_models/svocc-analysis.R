@@ -38,13 +38,9 @@ ccis <- data.frame()
    }
     sort(table(ccis$var))
 
-   d1 <- subset(ccis,var %in% "bsq")
-   d1 <- subset(ccis,var %in% "frs") # no effect
-   d1 <- subset(ccis,var %in% "dcon") # two attracted by conucos
-   d1 <- subset(ccis,var %in% "dbsq") # one avoids deforested areas
-   d1 <- subset(ccis,var %in% "dcom") # two avoid communities
-   d1 <- subset(ccis,var %in% "dhum") # one attracted?
-   subset(ccis,var %in% "cazTRUE") # pos. but not sign. for P. onca
+   d1 <- subset(ccis,var %in% "bsq") # one avoids, five prefer
+   d1 <- subset(ccis,var %in% "dbsq") # no effect
+   d1 <- subset(ccis,var %in% "dcom") # one avoid communities
 
    d1 <- d1[order(d1$coef),]
    o1 <- 1:nrow(d1)
@@ -58,6 +54,54 @@ ccis <- data.frame()
    axis(2,o1,d1$species,las=2,font=3)
    segments(d1[,5],o1,d1[,6],o1,col=c1)
    abline(v=0,lty=3)
+
+   d1 <- subset(ccis,var %in% "frs") # no effect
+   d1 <- subset(ccis,var %in% "dcon") # two attracted by conucos
+   d1 <- subset(ccis,var %in% "dhum") # no effect
+   d1 <- d1[order(d1$coef),]
+   o1 <- 1:nrow(d1)
+   c1 <- rep(1,length(o1))
+   c1[d1[,6]<0] <- 2
+   c1[d1[,5]>0] <- 3
+
+   par(mar=c(4,8,1,1))
+   plot(d1$coef,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(-10,5))
+   axis(1)
+   axis(2,o1,d1$species,las=2,font=3)
+   segments(d1[,5],o1,d1[,6],o1,col=c1)
+   abline(v=0,lty=3)
+
+   subset(ccis,var %in% "cazTRUE") # pos. but not sign. for P. onca
+
+
+
+GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
+ load(GIS.data)
+
+plot(vbsq)
+plot(grd,add=T,border="maroon")
+points(lat~long,data=eventos,subset=!camara %in% "RAS",col=4,pch=19)
+points(lat~long,data=eventos,subset=camara %in% "RAS",col=5,pch=3)
+points(comunidades,cex=2)
+points(conucos,cex=2,pch=5)
+
+
+eventos$grid <-  extract(rgrd,eventos[,c("long","lat")])
+track_points@data$grid <- extract(rgrd,track_points)
+
+camaras$grid <- extract(rgrd,camaras[,c("lon","lat")])
+
+track_points@data %>% group_by(grid) %>% tally() %>% transmute(grid,walk=(n-mean(n))/sd(n))-> walk
+camaras %>% group_by(grid) %>% summarise(cam=sum(dias.de.trabajo),caz=max(caza.celda)) %>% transmute(grid,caz,cam=(cam-mean(cam))/sd(cam)) -> cams
+
+dts <- data.frame(bsq=values(vbsq),dcon=values(dist.conucos),dcom=values(dist.comunidades),frs=values(dist.frs),dbsq=values(dist.dbsq),dcaz1=values(dist.caza1),dcaz2=values(dist.caza2),grid=values(rgrd)) %>% group_by(grid) %>% summarise(bsq=mean(bsq),dbsq=mean(dbsq),dcon=mean(dcon),dcom=mean(dcom),dpob=mean(min(dcon,dcom)),dhum=mean(min(dcon,dcom,dcaz1,dcaz2)),dcaz1=mean(dcaz1),dcaz2=mean(dcaz2),dcaz=mean(min(dcaz1,dcaz2)),frs=mean(frs))
+
+
+nw.dts <- data.frame(bsq=values(vbsq),dcon=values(dist.conucos),dcom=values(dist.comunidades),frs=values(current.frs),dbsq=values(current.dbsq),dcaz1=values(dist.caza1),dcaz2=values(dist.caza2),grid=values(rgrd)) %>% group_by(grid) %>% summarise(bsq=mean(bsq),dbsq=mean(dbsq),dcon=mean(dcon),dcom=mean(dcom),dpob=mean(min(dcon,dcom)),dhum=mean(min(dcon,dcom,dcaz1,dcaz2)),dcaz1=mean(dcaz1),dcaz2=mean(dcaz2),dcaz=mean(min(dcaz1,dcaz2)),frs=mean(frs))
+
+   plot(dts$frs,nw.dts$frs)
+   plot(dts$dbsq,nw.dts$dbsq)
+   abline(0,1)
 
 
    #
