@@ -1,6 +1,6 @@
-
-Rscript --vanilla $SCRIPTDIR/R/GIS/save-spatial-data.R 
-
+cd $WORKDIR
+nohup Rscript --vanilla $SCRIPTDIR/R/GIS/save-spatial-data.R &
+ls -lah $SCRIPTDIR/Rdata
 
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R C.paca &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R C.olivaceus  &
@@ -12,7 +12,7 @@ nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R D.le
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R D.marsupialis &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R D.novemcinctus &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R E.barbara &
-nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R H.hydrohaeris &
+nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R H.hydrochaeris &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R L.pardalis &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R L.tigrinus &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R L.wiedii &

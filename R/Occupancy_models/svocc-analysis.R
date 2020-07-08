@@ -25,6 +25,23 @@ if (Sys.getenv("WORKDIR") == "") {
 for (k in dir(sprintf("%s/Rdata",script.dir),pattern="svocc*",full.names=T))
    load(k)
 
+NagR2 <- function(fullmodel,nullmodel) {
+    Lnull <- exp(nullmodel$loglik)
+    Lfull <- exp(fullmodel$loglik)
+    N <- fullmodel$nobs
+    R2 <-  (1-((Lnull/Lfull)^(2/N)))/(1-(Lnull^(2/N)))
+    return(R2)
+}
+
+R2s <- data.frame()
+for(k in ls(pattern="boot")) {
+  Mfull <- get(k)
+  Mnull <- get(sub("boot","null",k))
+  R2s <- rbind(R2s,data.frame(k,R2= NagR2(Mfull,Mnull),deltaAIC=AIC(Mnull)-AIC(Mfull)) )
+} 
+NagR2(C.thous.boot,C.thous.null)
+NagR2(P.concolor.boot,P.concolor.null)
+
 ## use null model to validate fitted model (lower AIC and maybe calculate Nagelkerke R2)
 
    GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
