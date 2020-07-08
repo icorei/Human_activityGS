@@ -74,13 +74,14 @@ dts <- data.frame(bsq=values(vbsq),dcon=values(dist.conucos),dcom=values(dist.co
    ##pa.data$frs <- coalesce(pa.data$frs,max(pa.data$frs,na.rm=T))
    pa.data$pa <- coalesce(pa.data$pa,0L)
    ##  pa.data$caz <- coalesce(pa.data$caz,0L)
-
+ pa.data$bloque <- factor(grd@data$cuadrado[match(pa.data$grid,grd@data$OID_)])
    ## cor(pa.data[,-4])
 
    ## caz events and distance to conucos
    ##orig <- svocc(pa ~ caz + bsq + dcon + frs + dbsq| walk+cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
    ## keep conucos and communities as two different proxies (atracting and rejecting fauna)
 
+   fit.null <- svocc(pa ~ bloque | walk * cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
    fit0 <- fit <- svocc(pa ~ bsq + dcon + dcom + frs + dbsq | walk * cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
 
    exito <- "NOT"
@@ -89,23 +90,38 @@ dts <- data.frame(bsq=values(vbsq),dcon=values(dist.conucos),dcom=values(dist.co
       assign(sprintf("%s.full",sp),fit)
       bfit <- bootstrap(fit, B=50)
       assign(sprintf("%s.boot",sp),bfit)
-      exito <- "OK"
+      bfit <- bootstrap(fit.null, B=50)
+      assign(sprintf("%s.null",sp),bfit)
+    exito <- "OK"
    } else {
-      fit1 <- svocc(pa ~ bsq + dcon + dcom  + frs + dbsq | walk + cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
-      fit2 <- svocc(pa ~ caz + bsq + dcon + frs + dbsq | walk*cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
-      fit3 <- svocc(pa ~ bsq + dcom  + frs + dbsq | walk*cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
-      fit4 <- svocc(pa ~ bsq + dcon + dcom  + frs + dbsq | walk * cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      # fit0 <- svocc(pa ~ bsq + dcon + dcom  + frs + dbsq | walk * cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit1 <- svocc(pa ~ bsq + dcon + dcom  + frs + dbsq | walk * cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit2 <- svocc(pa ~ bsq + dcon + dcom  + frs + dbsq | walk + cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit3 <- svocc(pa ~ bsq + dcon + dcom  + frs + dbsq | walk + cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
 
-      fit5 <- svocc(pa ~ bsq + dhum | walk*cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
-      fit6 <- svocc(pa ~ bsq + frs + dbsq | walk*cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
-      fit7 <- svocc(pa ~ bsq + dcom + dcon | walk*cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit4 <- svocc(pa ~ bsq + dcon + frs + dbsq | walk * cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit5 <- svocc(pa ~ bsq + dcon + frs + dbsq | walk * cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit6 <- svocc(pa ~ bsq + dcon + frs + dbsq | walk + cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit7 <- svocc(pa ~ bsq + dcon + frs + dbsq | walk + cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
 
-      fit8 <- svocc(pa ~ caz + bsq + dcon + frs + dbsq| walk+cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
-      fit9 <- svocc(pa ~ caz + bsq + dcon + frs + dbsq| walk*cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
-      fit10 <- svocc(pa ~ caz + bsq + dcon + frs + dbsq| walk*cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
-      fit11 <- svocc(pa ~ caz + bsq + dcon + frs + dbsq| walk+cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit8 <- svocc(pa ~ bsq + frs + dbsq | walk * cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit9 <- svocc(pa ~ bsq + frs + dbsq | walk * cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit10 <- svocc(pa ~ bsq + frs + dbsq | walk + cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit11 <- svocc(pa ~ bsq + frs + dbsq | walk + cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
 
-      tt <- AIC(fit1,fit2,fit3,fit4,fit5,fit6,fit7,fit8,fit9,fit10,fit11)
+      fit12 <- svocc(pa ~ bsq + dbsq | walk * cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit13 <- svocc(pa ~ bsq + dbsq | walk * cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit14 <- svocc(pa ~ bsq + dbsq | walk + cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit15 <- svocc(pa ~ bsq + dbsq | walk + cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
+
+      fit16 <- svocc(pa ~ bloque + bsq + dbsq | walk * cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit17 <- svocc(pa ~ bloque + bsq + dbsq | walk * cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit18 <- svocc(pa ~ bloque + bsq + dbsq | walk + cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
+      fit19 <- svocc(pa ~ bloque + bsq + dbsq | walk + cam, data=pa.data, link.sta = "probit", link.det = "logit", penalized = FALSE, method = c( "optim"))
+
+
+      tt <- AIC(fit1,fit2,fit3,fit4,fit5,fit6,fit7,fit8,fit9,fit10,
+        fit11,fit12,fit13,fit14,fit15,fit16,fit17,fit18,fit19)
 
       for (k in order(tt$AIC)) {
          if (exito != "OK") {
@@ -114,21 +130,26 @@ dts <- data.frame(bsq=values(vbsq),dcon=values(dist.conucos),dcom=values(dist.co
                assign(sprintf("%s.alt",sp),fit)
                bfit <- bootstrap(fit, B=50)
                assign(sprintf("%s.boot",sp),bfit)
-               exito <- "OK"
+               bfit <- bootstrap(fit.null, B=50)
+               assign(sprintf("%s.null",sp),bfit)
+                exito <- "OK"
             }
          }
       }
    }
 
-   for (k in 0:11) {
+   for (k in 0:19) {
       if (exito != "OK") {
          fit <- svocc.step(get(sprintf("fit%s",k)), model="sta")
          if (all(abs(fit$coefficients$sta)<10) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<6) ) {
             assign(sprintf("%s.step",sp),fit)
             bfit <- bootstrap(fit, B=50)
             assign(sprintf("%s.boot",sp),bfit)
+            bfit <- bootstrap(fit.null, B=50)
+            assign(sprintf("%s.null",sp),bfit)
+
             exito <- "OK"
          }
       }
    }
-   save(file=sprintf("%s/Rdata/svocc-%s.rda",script.dir,sp),list=c(ls(pattern=".full"),ls(pattern=".boot"),ls(pattern=".alt"),ls(pattern=".step")))
+   save(file=sprintf("%s/Rdata/svocc-%s.rda",script.dir,sp),list=ls(pattern=".boot|.full|.null|.alt|.step"))

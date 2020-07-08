@@ -25,7 +25,7 @@ if (Sys.getenv("WORKDIR") == "") {
 for (k in dir(sprintf("%s/Rdata",script.dir),pattern="svocc*",full.names=T))
    load(k)
 
-
+## use null model to validate fitted model (lower AIC and maybe calculate Nagelkerke R2)
 
    GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
     load(GIS.data)
@@ -87,6 +87,12 @@ for (k in dir(sprintf("%s/Rdata",script.dir),pattern="svocc*",full.names=T))
       dcaz=(dcaz-mus$mu.dcaz)/mus$sg.dcaz,
       frs=(frs-mus$mu.frs)/mus$sg.frs,
       dbsq=(dbsq-mus$mu.dbsq)/mus$sg.dbsq) -> mi.data
+
+      ## asignar bloques para hacer predicciones por bloque:
+      ## hacer matrices de probabilidad de uso por bloques...
+      ## comparar diferencias entre bloques: naive, null model, best fit model
+
+      ## comparar predicciones de probablidad de uso vs. caceria (no, si, antes)
 
    # ## al menos 12 species con modelos decentes y tres mas con modelos parciales
 ccis <- data.frame()
