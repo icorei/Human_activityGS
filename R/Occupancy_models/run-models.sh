@@ -1,3 +1,7 @@
+
+Rscript --vanilla $SCRIPTDIR/R/GIS/save-spatial-data.R 
+
+
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R C.paca &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R C.olivaceus  &
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R C.thous &

@@ -51,12 +51,21 @@ if (file.exists(GIS.data)) {
    obj.list <- c(obj.list,"grd")
    save(file=GIS.data,list=obj.list)
 
+   e <- extent(-61.869,-61.005,5.453,5.750)
    r0 <- raster("GFC-2019-v1.7/Hansen_GFC-2019-v1.7_treecover2000.tif")
-   r1 <- aggregate(r0,10)
-    e <- extent(-61.869,-61.005,5.453,5.750)
-   vbsq <- crop(r0,e)
+   r1 <- raster("GFC-2019-v1.7/Hansen_GFC-2019-v1.7_lossyear.tif")
+   fbsq <- vbsq <- crop(r0,e)
+   pbsq <- crop(r1,e)
+   values(vbsq)[values(pbsq) %in% (1:15)] <- 0
+   values(fbsq)[values(pbsq)>0] <- 0
    if (!inMemory(vbsq))
     vbsq <- readAll(vbsq)
+
+   if (!inMemory(fbsq))
+    fbsq <- readAll(fbsq)
+
+
+    r1 <- aggregate(r0,10)
    rbsq <- crop(r1,e)
    rgrd <- rasterize(grd,vbsq)
    if (!inMemory(rgrd))
@@ -72,17 +81,13 @@ if (file.exists(GIS.data)) {
    if (!inMemory(dist.comunidades))
     dist.comunidades <- readAll(dist.comunidades)
 
-   r0 <- raster("GFC-2019-v1.7/Hansen_GFC-2019-v1.7_lossyear.tif")
-   pbsq <- crop(r0,e)
-   fbsq <- vbsq
-   values(fbsq)[values(pbsq)>0] <- 0
 
    xy <- xyFromCell(pbsq,1:ncell(pbsq))
    ## five years prior to sampling
-   pbsq1 <- rbind(xy[(values(pbsq) %in% 12:16) & xy[,1] > -61.4,],
-    xy[(values(pbsq) %in% 14:18) & xy[,1] < -61.4,])
+   pbsq1 <- rbind(xy[(values(pbsq) %in% 11:15) & xy[,1] > -61.4,],
+    xy[(values(pbsq) %in% 13:17) & xy[,1] < -61.4,])
    ## last five years
-    pbsq2 <- xy[(values(pbsq) %in% 15:19),]
+    pbsq2 <- xy[(values(pbsq) %in% 11:19),]
 
     d0 <- distanceFromPoints(rbsq,pbsq1)
     d1 <- disaggregate(d0,10)
@@ -129,9 +134,9 @@ if (file.exists(GIS.data)) {
    frs.c <- crop(frs.c,e)
    frs.c@data$fch <- chron(dates.=frs.c@data$acq_date,format="y/m/d")
 
-   frs1 <- rbind(subset(frs.c,years(fch) %in% 2012:2016 & coordinates(frs.c)[,1] > -61.4),
-      subset(frs.c,years(fch) %in% 2014:2018 & coordinates(frs.c)[,1] < -61.4))
-   frs2 <- subset(frs.c,years(fch) %in% 2015:2019 )
+   frs1 <- rbind(subset(frs.c,years(fch) %in% 2011:2015 & coordinates(frs.c)[,1] > -61.4),
+      subset(frs.c,years(fch) %in% 2013:2017 & coordinates(frs.c)[,1] < -61.4))
+   frs2 <- subset(frs.c,years(fch) %in% 2011:2020 )
 
   d0 <- distanceFromPoints(rbsq,frs1)
   d1 <- disaggregate(d0,10)

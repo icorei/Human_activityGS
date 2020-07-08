@@ -87,6 +87,8 @@ dts <- data.frame(bsq=values(vbsq),dcon=values(dist.conucos),dcom=values(dist.co
 
    if (all(abs(fit$coefficients$sta)<10) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<6) ) {
       assign(sprintf("%s.full",sp),fit)
+      bfit <- bootstrap(fit, B=50)
+      assign(sprintf("%s.boot",sp),bfit)
       exito <- "OK"
    } else {
       fit1 <- svocc(pa ~ bsq + dcon + dcom  + frs + dbsq | walk + cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
@@ -110,6 +112,8 @@ dts <- data.frame(bsq=values(vbsq),dcon=values(dist.conucos),dcom=values(dist.co
             fit <- get(sprintf("fit%s",k))
             if (all(abs(fit$coefficients$sta)<10) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<6) ) {
                assign(sprintf("%s.alt",sp),fit)
+               bfit <- bootstrap(fit, B=50)
+               assign(sprintf("%s.boot",sp),bfit)
                exito <- "OK"
             }
          }
@@ -121,8 +125,10 @@ dts <- data.frame(bsq=values(vbsq),dcon=values(dist.conucos),dcom=values(dist.co
          fit <- svocc.step(get(sprintf("fit%s",k)), model="sta")
          if (all(abs(fit$coefficients$sta)<10) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<6) ) {
             assign(sprintf("%s.step",sp),fit)
+            bfit <- bootstrap(fit, B=50)
+            assign(sprintf("%s.boot",sp),bfit)
             exito <- "OK"
          }
       }
    }
-   save(file=sprintf("%s/Rdata/svocc-%s.rda",script.dir,sp),list=c(ls(pattern=".full"),ls(pattern=".alt"),ls(pattern=".step")))
+   save(file=sprintf("%s/Rdata/svocc-%s.rda",script.dir,sp),list=c(ls(pattern=".full"),ls(pattern=".boot"),ls(pattern=".alt"),ls(pattern=".step")))
