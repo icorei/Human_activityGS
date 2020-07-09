@@ -9,6 +9,7 @@ require(raster)
 #require(SDMTools)
 require(chron)
 require(detect)
+require(vegan)
 
 ## ubicación de la carpeta de trabajo y el repositorio local
 
@@ -37,10 +38,13 @@ R2s <- data.frame()
 for(k in ls(pattern="boot")) {
   Mfull <- get(k)
   Mnull <- get(sub("boot","null",k))
-  R2s <- rbind(R2s,data.frame(k,R2= NagR2(Mfull,Mnull),deltaAIC=AIC(Mnull)-AIC(Mfull)) )
-} 
-NagR2(C.thous.boot,C.thous.null)
-NagR2(P.concolor.boot,P.concolor.null)
+  R2s <- rbind(R2s,data.frame(name=gsub(".boot","",k),R2= NagR2(Mfull,Mnull),deltaAIC=AIC(Mnull)-AIC(Mfull),stringsAsFactors=F) )
+}
+rm(Mnull,Mfull,fit.null)
+
+R2s
+
+table(R2s$deltaAIC>2)
 
 ## use null model to validate fitted model (lower AIC and maybe calculate Nagelkerke R2)
 
@@ -86,7 +90,7 @@ NagR2(P.concolor.boot,P.concolor.null)
    mu.dcaz=mean(dcaz),sg.dcaz=sd(dcaz)
    ) -> mus
 
-      nw.dts  %>% transmute(grid,caz=T,
+      nw.dts  %>% transmute(grid,
       bsq=(bsq-mus$mu.bsq)/mus$sg.bsq,
       dcon=(dcon-mus$mu.dcon)/mus$sg.dcon,
       dcom=(dcom-mus$mu.dcom)/mus$sg.dcom,
@@ -95,7 +99,7 @@ NagR2(P.concolor.boot,P.concolor.null)
       dcaz=(dcaz-mus$mu.dcaz)/mus$sg.dcaz,
       frs=(frs-mus$mu.frs)/mus$sg.frs,
       dbsq=(dbsq-mus$mu.dbsq)/mus$sg.dbsq) -> nw.data
-   dts  %>% transmute(grid,caz=T,
+   dts  %>% transmute(grid,
       bsq=(bsq-mus$mu.bsq)/mus$sg.bsq,
       dcon=(dcon-mus$mu.dcon)/mus$sg.dcon,
       dcom=(dcom-mus$mu.dcom)/mus$sg.dcom,
@@ -105,6 +109,15 @@ NagR2(P.concolor.boot,P.concolor.null)
       frs=(frs-mus$mu.frs)/mus$sg.frs,
       dbsq=(dbsq-mus$mu.dbsq)/mus$sg.dbsq) -> mi.data
 
+mi.data$caz[match(cams$grid,mi.data$grid)] <- cams$caz
+nw.data$caz[match(cams$grid,nw.data$grid)] <- cams$caz
+
+mi.data$bloque <- factor(grd$cuadrado[match(mi.data$grid,grd$OID_)] )
+nw.data$bloque <- factor(grd$cuadrado[match(nw.data$grid,grd$OID_)] )
+
+mi.data <- subset(mi.data,!is.na(grid))
+nw.data <- subset(nw.data,!is.na(grid))
+
       ## asignar bloques para hacer predicciones por bloque:
       ## hacer matrices de probabilidad de uso por bloques...
       ## comparar diferencias entre bloques: naive, null model, best fit model
@@ -113,7 +126,10 @@ NagR2(P.concolor.boot,P.concolor.null)
 
    # ## al menos 12 species con modelos decentes y tres mas con modelos parciales
 ccis <- data.frame()
-   for (mdl in c(ls(pattern=".full"),ls(pattern=".alt"),ls(pattern=".step"))) {
+
+
+   for (spp in subset(R2s,deltaAIC>2)$name) {
+      mdl <- sprintf("%s.boot",spp)
       fit <- get(mdl)
        nm <- paste(strsplit(mdl,"\\.")[[1]][1:2],collapse=". ")
        d1 <- data.frame(species=nm,var=names(fit$coefficients$sta),coef=fit$coefficients$sta)
@@ -124,26 +140,12 @@ ccis <- data.frame()
     sort(table(ccis$var))
 table(ccis$species,ccis$var)
 
-   d1 <- subset(ccis,var %in% "bsq") # one avoids, five prefer
-   d1 <- subset(ccis,var %in% "dbsq") # no effect
-   d1 <- subset(ccis,var %in% "dcom") # one avoid communities
-
-   d1 <- d1[order(d1$coef),]
-   o1 <- 1:nrow(d1)
-   c1 <- rep(1,length(o1))
-   c1[d1[,6]<0] <- 2
-   c1[d1[,5]>0] <- 3
-
-   par(mar=c(4,8,1,1))
-   plot(d1$coef,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(-5,8))
-   axis(1)
-   axis(2,o1,d1$species,las=2,font=3)
-   segments(d1[,5],o1,d1[,6],o1,col=c1)
-   abline(v=0,lty=3)
-
+   d1 <- subset(ccis,var %in% "bsq") # one avoids, one prefer
+   d1 <- subset(ccis,var %in% "dbsq") # one avoids deforested areas
+   d1 <- subset(ccis,var %in% "dcom") # two avoid communities
    d1 <- subset(ccis,var %in% "frs") # no effect
    d1 <- subset(ccis,var %in% "dcon") # two attracted by conucos
-   d1 <- subset(ccis,var %in% "dhum") # no effect
+
    d1 <- d1[order(d1$coef),]
    o1 <- 1:nrow(d1)
    c1 <- rep(1,length(o1))
@@ -151,19 +153,13 @@ table(ccis$species,ccis$var)
    c1[d1[,5]>0] <- 3
 
    par(mar=c(4,8,1,1))
-   plot(d1$coef,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(-10,5))
+   plot(d1$coef,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(-10,10))
    axis(1)
    axis(2,o1,d1$species,las=2,font=3)
    segments(d1[,5],o1,d1[,6],o1,col=c1)
    abline(v=0,lty=3)
 
-   subset(ccis,var %in% "cazTRUE") # pos. but not sign. for P. onca
 
-
-
-   predict(C.paca.alt)
-   predict(C.paca.alt,mi.data)
-   predict(C.paca.alt,nw.data)
 
 ## esta es la prediccion en 250 celdas
    hist(boot::inv.logit(predict(C.paca.alt,mi.data)))
@@ -182,9 +178,17 @@ table(ccis$species,ccis$var)
    sum(boot::inv.logit(predict(M.americana.step,mi.data)))
    sum(boot::inv.logit(predict(M.americana.step,nw.data)))
 
+spmtz <- matrix(NA,nrow=nrow(mi.data),ncol=length(ls(pattern=".null")))
+colnames(spmtz) <- gsub(".null","",ls(pattern=".null"))
+rownames(spmtz) <- mi.data$grid
 prds <- data.frame()
-for (mdl in ls(pattern=".boot")) {
-      fit <- get(mdl)
+for (mdl in ls(pattern=".null")) {
+      nm <- gsub(".null","",mdl)
+      if(nm %in% subset(R2s,deltaAIC>2)$name) {
+         fit <- get(gsub("null","boot",mdl))
+      } else {
+         fit <- get(mdl)
+      }
       prd0 <- predict(fit,mi.data,type="response",se.fit=T)
       A <- 1.85 * boot::logit(prd0$se.fit)
       A[is.infinite(A)] <- -60
@@ -192,7 +196,11 @@ for (mdl in ls(pattern=".boot")) {
 
       ci.min <- boot::inv.logit(B+A)
       ci.max <- boot::inv.logit(B-A)
-      nm <- gsub(".boot","",mdl)
+
+      spmtz[match(names(prd0$fit),rownames(spmtz)),nm] <- prd0$fit
+      ss <- match(names(prd0$fit),mi.data$grid)
+      ctst1 <-  cor.test(prd0$fit,(mi.data$caz[ss] %in% 1)+0,method="kendall")
+      ctst2 <-  cor.test(prd0$fit,(mi.data$caz[ss] > 0)+0,method="kendall")
 
 
       prd1 <- predict(fit,nw.data,type="response",se.fit=T)
@@ -204,8 +212,21 @@ for (mdl in ls(pattern=".boot")) {
       c2.max <- boot::inv.logit(B-A)
 
       prds <- rbind(prds,data.frame(specie=nm,antes=sum(prd0$fit),a.lower=sum(ci.min),a.upper=sum(ci.max),
-         despues=sum(prd1$fit),d.lower=sum(c2.min),d.upper=sum(c2.max)))
-   }
+         despues=sum(prd1$fit),d.lower=sum(c2.min),d.upper=sum(c2.max),cor1=ctst1$estimate,p.cor1=round(ctst1$p.value,3),cor=ctst2$estimate,p.cor=round(ctst2$p.value,3)))
+}
+
+subset(prds,p.cor<0.05)
+
+ss <- rowSums(is.na(spmtz))==0
+m1 <- spmtz[ss,]
+m1 <- m1[(order(rowSums(m1))),(order(colSums(m1)))]
+image(m1)
+out <-nestedtemp(m1>.5)
+out
+plot (out)
+oecosimu(m1>.5,nestedtemp,"r1", nsimul = 1000)
+
+rda(spmtz[ss,])
 
    prds <- prds[order(prds$antes),]
    o1 <- 1:nrow(prds)
@@ -213,12 +234,12 @@ for (mdl in ls(pattern=".boot")) {
    c1[prds$despues<(prds$antes*.95)] <- 2
    c1[prds$antes<(prds$despues*.95)] <- 3
    par(mar=c(4,8,1,1))
-   plot(prds$antes,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(0,250))
-   points(prds$despues,o1+.25,pch=1,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(0,250))
-   axis(1)
+   plot(prds$antes,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="percentage of study area",ylab="",xlim=c(0,250))
+   #points(prds$despues,o1+.25,pch=1,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(0,250))
+   axis(1,seq(0,250,50),seq(0,250,50)*100/250)
    axis(2,o1,prds$specie,las=2,font=3)
    segments(prds$a.lower,o1,prds$a.upper,o1,col=c1)
-   segments(prds$d.lower,o1+.25,prds$d.upper,o1+.25,col=c1)
+   #segments(prds$d.lower,o1+.25,prds$d.upper,o1+.25,col=c1)
 
 predict(C.paca.full)
 
