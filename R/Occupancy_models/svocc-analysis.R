@@ -186,8 +186,10 @@ for (mdl in ls(pattern=".null")) {
       nm <- gsub(".null","",mdl)
       if(nm %in% subset(R2s,deltaAIC>2)$name) {
          fit <- get(gsub("null","boot",mdl))
+         modelo <- "best"
       } else {
          fit <- get(mdl)
+         modelo <- "null"
       }
       prd0 <- predict(fit,mi.data,type="response",se.fit=T)
       A <- 1.85 * boot::logit(prd0$se.fit)
@@ -211,13 +213,33 @@ for (mdl in ls(pattern=".null")) {
       c2.min <- boot::inv.logit(B+A)
       c2.max <- boot::inv.logit(B-A)
 
-      prds <- rbind(prds,data.frame(specie=nm,antes=sum(prd0$fit),a.lower=sum(ci.min),a.upper=sum(ci.max),
+      prds <- rbind(prds,data.frame(specie=nm,modelo,antes=sum(prd0$fit),a.lower=sum(ci.min),a.upper=sum(ci.max),
          despues=sum(prd1$fit),d.lower=sum(c2.min),d.upper=sum(c2.max),cor1=ctst1$estimate,p.cor1=round(ctst1$p.value,3),cor=ctst2$estimate,p.cor=round(ctst2$p.value,3)))
 }
 
 subset(prds,p.cor<0.05)
+ subset(prds,p.cor<0.05)[,c(1,10,11)]
 
-ss <- rowSums(is.na(spmtz))==0
+
+ prds <- prds[order(prds$antes),]
+ o1 <- 1:nrow(prds)
+ c1 <- o1^0
+ c1[prds$despues<(prds$antes*.95)] <- 2
+ c1[prds$antes<(prds$despues*.95)] <- 3
+ c1[prds$modelo %in% "null"] <- "grey77"
+ par(mar=c(4,8,1,1))
+ plot(prds$antes,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="percentage of study area",ylab="",xlim=c(0,250))
+ #points(prds$despues,o1+.25,pch=1,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(0,250))
+ axis(1,seq(0,250,50),seq(0,250,50)*100/250)
+ axis(2,o1,prds$specie,las=2,font=3)
+ segments(prds$a.lower,o1,prds$a.upper,o1,col=c1)
+ #segments(prds$d.lower,o1+.25,prds$d.upper,o1+.25,col=c1)
+
+
+ ss <- rowSums(is.na(spmtz))==0
+grd@data$rqz[ match(rownames(spmtz)[ss] ,grd@data$OID_)] <-  rowSums(spmtz)[ss]
+prd.rqz <- rasterize(grd,vbsq,field="rqz")
+
 m1 <- spmtz[ss,]
 m1 <- m1[(order(rowSums(m1))),(order(colSums(m1)))]
 image(m1)
@@ -228,18 +250,6 @@ oecosimu(m1>.5,nestedtemp,"r1", nsimul = 1000)
 
 rda(spmtz[ss,])
 
-   prds <- prds[order(prds$antes),]
-   o1 <- 1:nrow(prds)
-   c1 <- o1^0
-   c1[prds$despues<(prds$antes*.95)] <- 2
-   c1[prds$antes<(prds$despues*.95)] <- 3
-   par(mar=c(4,8,1,1))
-   plot(prds$antes,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="percentage of study area",ylab="",xlim=c(0,250))
-   #points(prds$despues,o1+.25,pch=1,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(0,250))
-   axis(1,seq(0,250,50),seq(0,250,50)*100/250)
-   axis(2,o1,prds$specie,las=2,font=3)
-   segments(prds$a.lower,o1,prds$a.upper,o1,col=c1)
-   #segments(prds$d.lower,o1+.25,prds$d.upper,o1+.25,col=c1)
 
 predict(C.paca.full)
 
