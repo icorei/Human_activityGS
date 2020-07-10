@@ -57,14 +57,24 @@ table(R2s$deltaAIC>2)
    points(lat~long,data=eventos,subset=camara %in% "RAS",col=5,pch=3)
    points(comunidades,cex=2)
    points(conucos,cex=2,pch=5)
+plot(subset(grd,cuadrado==5),add=T)
+points(subset(camaras,is.na(grid))[,c("lon","lat")],cex=4)
+points(subset(eventos,is.na(grid))[,c("long","lat")],cex=4)
 
 
-   eventos$grid <-  extract(rgrd,eventos[,c("long","lat")])
-   track_points@data$grid <- extract(rgrd,track_points)
+plot(vbsq)
+plot(grd,add=T,border="maroon")
+points(lat~long,data=eventos,subset=!camara %in% "RAS",col=4,pch=19)
+points(lat~long,data=eventos,subset=camara %in% "RAS",col=5,pch=3)
+points(comunidades,cex=2)
+points(conucos,cex=2,pch=5)
+plot(subset(grd,cuadrado==5),add=T)
+points(subset(camaras,is.na(grid))[,c("lon","lat")],cex=4)
+points(subset(eventos,is.na(grid))[,c("long","lat")],cex=4)
+##plot(grd)
+##plot(subset(grd,OID_ %in% apply(d1[ss,],1,which.min)),add=T,col=2)
 
-   camaras$grid <- extract(rgrd,camaras[,c("lon","lat")])
-
-   track_points@data %>% group_by(grid) %>% tally() %>% transmute(grid,walk=(n-mean(n))/sd(n))-> walk
+   tps@data %>% group_by(grid) %>% tally() %>% transmute(grid,walk=(n-mean(n))/sd(n))-> walk
    camaras %>% group_by(grid) %>% summarise(cam=sum(dias.de.trabajo),caz=max(caza.celda)) %>% transmute(grid,caz,cam=(cam-mean(cam))/sd(cam)) -> cams
 
    dts <- data.frame(bsq=values(vbsq),dcon=values(dist.conucos),dcom=values(dist.comunidades),frs=values(dist.frs),dbsq=values(dist.dbsq),dcaz1=values(dist.caza1),dcaz2=values(dist.caza2),grid=values(rgrd)) %>% group_by(grid) %>% summarise(bsq=mean(bsq),dbsq=mean(dbsq),dcon=mean(dcon),dcom=mean(dcom),dpob=mean(min(dcon,dcom)),dhum=mean(min(dcon,dcom,dcaz1,dcaz2)),dcaz1=mean(dcaz1),dcaz2=mean(dcaz2),dcaz=mean(min(dcaz1,dcaz2)),frs=mean(frs))
@@ -76,7 +86,7 @@ table(R2s$deltaAIC>2)
       plot(dts$dbsq,nw.dts$dbsq)
       abline(0,1)
 
-      eventos %>% mutate(target=species %in% sp) %>% group_by(grid) %>% summarise(pa=max(target)) -> species
+    eventos %>% mutate(target=species %in% sp) %>% group_by(grid) %>% summarise(pa=max(target)) -> species
 
       ## two events (camera and ras) outside grid, are they valid?
 
@@ -239,6 +249,12 @@ subset(prds,p.cor<0.05)
  ss <- rowSums(is.na(spmtz))==0
 grd@data$rqz[ match(rownames(spmtz)[ss] ,grd@data$OID_)] <-  rowSums(spmtz)[ss]
 prd.rqz <- rasterize(grd,vbsq,field="rqz")
+
+plot(vbsq)
+plot(grd,col=grey((1:5)/5)[cut(grd@data$rqz,breaks=5)],add=T)
+plot(grd,col=(1:5)[cut(grd@data$rqz,breaks=5)],add=T)
+
+
 
 m1 <- spmtz[ss,]
 m1 <- m1[(order(rowSums(m1))),(order(colSums(m1)))]

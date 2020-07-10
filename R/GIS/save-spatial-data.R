@@ -159,6 +159,35 @@ if (file.exists(GIS.data)) {
 
 
 
+  ## two events (camera and ras) outside grid, are they valid? -> YES, we will use proximity to asign to a cell in the grid
+  ## points(subset(camaras,is.na(grid))[,c("lon","lat")],cex=4)
+
+  eventos$grid <-  extract(rgrd,eventos[,c("long","lat")])
+  d1 <- pointDistance(eventos[,c("long","lat")], coordinates(grd), lonlat=T,allpairs=T)
+  ss <- is.na(eventos$grid)
+  eventos$grid[ss] <- apply(d1[ss,],1,which.min)
+
+  camaras$grid <- extract(rgrd,camaras[,c("lon","lat")])
+  d1 <- pointDistance(camaras[,c("lon","lat")], coordinates(grd), lonlat=T,allpairs=T)
+  ss <- is.na(camaras$grid)
+  camaras$grid[ss] <- apply(d1[ss,],1,which.min)
+
+  tps <- crop(track_points,vbsq)
+  tps@data$grid <- extract(rgrd,tps)
+  d1 <- pointDistance(coordinates(tps), coordinates(grd), lonlat=T,allpairs=T)
+
+  #plot(tps,col=is.na(tps@data$grid)+1)
+  #plot(grd,add=T)
+  # hist(apply(d1[!is.na(tps@data$grid),],1,min))
+  ss <- is.na(tps$grid) & (apply(d1,1,min) < 1500)
+  tps$grid[ss] <- apply(d1[ss,],1,which.min)
+
+  tps <- subset(tps,!is.na(grid))
+  ##table(camaras$caza.celda,camaras$Si.se.caza.aqui)
+
+ obj.list <- unique(c(obj.list,"camaras","eventos","tps"))
+  save(file=GIS.data,list=obj.list)
+
 
 #nL <- raster("nightlights/SVDNB_npp_20140101-20140131_vcmcfg_v10.tif")
 #nLights <- crop(nL,grd)
