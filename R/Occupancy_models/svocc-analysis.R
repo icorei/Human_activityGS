@@ -22,6 +22,10 @@ if (Sys.getenv("WORKDIR") == "") {
   work.dir <- Sys.getenv("WORKDIR")
   script.dir <- Sys.getenv("SCRIPTDIR")
 }
+## use null model to validate fitted model (lower AIC and maybe calculate Nagelkerke R2)
+
+GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
+load(GIS.data)
 
 for (k in dir(sprintf("%s/Rdata",script.dir),pattern="svocc*",full.names=T))
    load(k)
@@ -46,10 +50,44 @@ R2s
 
 table(R2s$deltaAIC>2)
 
-## use null model to validate fitted model (lower AIC and maybe calculate Nagelkerke R2)
 
-   GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
-    load(GIS.data)
+   # ## al menos 12 species con modelos decentes y tres mas con modelos parciales
+ccis <- data.frame()
+
+
+   for (spp in subset(R2s,deltaAIC>2)$name) {
+      mdl <- sprintf("%s.boot",spp)
+      fit <- get(mdl)
+       nm <- paste(strsplit(mdl,"\\.")[[1]][1:2],collapse=". ")
+       d1 <- data.frame(species=nm,var=names(fit$coefficients$sta),coef=fit$coefficients$sta)
+       d2 <- cbind(d1,confint(fit,sprintf("sta_%s",d1$var)))
+      ccis <- rbind(ccis,data.frame(species=nm,d2))
+
+   }
+    sort(table(ccis$var))
+table(ccis$species,ccis$var)
+
+   d1 <- subset(ccis,var %in% "bsq") # one avoids, one prefer
+   d1 <- subset(ccis,var %in% "dbsq") # one avoids deforested areas
+   d1 <- subset(ccis,var %in% "dcom") # two avoid communities
+   d1 <- subset(ccis,var %in% "frs") # no effect
+   d1 <- subset(ccis,var %in% "dcon") # two attracted by conucos
+
+layout()
+   d1 <- d1[order(d1$coef),]
+   o1 <- 1:nrow(d1)
+   c1 <- rep(1,length(o1))
+   c1[d1[,6]<0] <- 2
+   c1[d1[,5]>0] <- 3
+
+   par(mar=c(4,8,1,1))
+   plot(d1$coef,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(-10,10))
+   axis(1)
+   axis(2,o1,d1$species,las=2,font=3)
+   segments(d1[,5],o1,d1[,6],o1,col=c1)
+   abline(v=0,lty=3)
+
+
 
    plot(vbsq)
    plot(grd,add=T,border="maroon")
@@ -86,7 +124,7 @@ points(subset(eventos,is.na(grid))[,c("long","lat")],cex=4)
       plot(dts$dbsq,nw.dts$dbsq)
       abline(0,1)
 
-    eventos %>% mutate(target=species %in% sp) %>% group_by(grid) %>% summarise(pa=max(target)) -> species
+  ##  eventos %>% mutate(target=species %in% sp) %>% group_by(grid) %>% summarise(pa=max(target)) -> species
 
       ## two events (camera and ras) outside grid, are they valid?
 
@@ -119,8 +157,11 @@ points(subset(eventos,is.na(grid))[,c("long","lat")],cex=4)
       frs=(frs-mus$mu.frs)/mus$sg.frs,
       dbsq=(dbsq-mus$mu.dbsq)/mus$sg.dbsq) -> mi.data
 
-mi.data$caz[match(cams$grid,mi.data$grid)] <- cams$caz
-nw.data$caz[match(cams$grid,nw.data$grid)] <- cams$caz
+#mi.data$caz[match(cams$grid,mi.data$grid)] <- cams$caz
+#nw.data$caz[match(cams$grid,nw.data$grid)] <- cams$caz
+
+mi.data$caz <- cams$caz[match(mi.data$grid,cams$grid)]
+nw.data$caz  <- cams$caz[match(nw.data$grid,cams$grid)]
 
 mi.data$bloque <- factor(grd$cuadrado[match(mi.data$grid,grd$OID_)] )
 nw.data$bloque <- factor(grd$cuadrado[match(nw.data$grid,grd$OID_)] )
@@ -134,59 +175,6 @@ nw.data <- subset(nw.data,!is.na(grid))
 
       ## comparar predicciones de probablidad de uso vs. caceria (no, si, antes)
 
-   # ## al menos 12 species con modelos decentes y tres mas con modelos parciales
-ccis <- data.frame()
-
-
-   for (spp in subset(R2s,deltaAIC>2)$name) {
-      mdl <- sprintf("%s.boot",spp)
-      fit <- get(mdl)
-       nm <- paste(strsplit(mdl,"\\.")[[1]][1:2],collapse=". ")
-       d1 <- data.frame(species=nm,var=names(fit$coefficients$sta),coef=fit$coefficients$sta)
-       d2 <- cbind(d1,confint(fit,sprintf("sta_%s",d1$var)))
-      ccis <- rbind(ccis,data.frame(species=nm,d2))
-
-   }
-    sort(table(ccis$var))
-table(ccis$species,ccis$var)
-
-   d1 <- subset(ccis,var %in% "bsq") # one avoids, one prefer
-   d1 <- subset(ccis,var %in% "dbsq") # one avoids deforested areas
-   d1 <- subset(ccis,var %in% "dcom") # two avoid communities
-   d1 <- subset(ccis,var %in% "frs") # no effect
-   d1 <- subset(ccis,var %in% "dcon") # two attracted by conucos
-
-   d1 <- d1[order(d1$coef),]
-   o1 <- 1:nrow(d1)
-   c1 <- rep(1,length(o1))
-   c1[d1[,6]<0] <- 2
-   c1[d1[,5]>0] <- 3
-
-   par(mar=c(4,8,1,1))
-   plot(d1$coef,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(-10,10))
-   axis(1)
-   axis(2,o1,d1$species,las=2,font=3)
-   segments(d1[,5],o1,d1[,6],o1,col=c1)
-   abline(v=0,lty=3)
-
-
-
-## esta es la prediccion en 250 celdas
-   hist(boot::inv.logit(predict(C.paca.alt,mi.data)))
-   hist(boot::inv.logit(predict(C.paca.alt,nw.data)))
-
-   sum(boot::inv.logit(predict(C.paca.alt,mi.data)))
-   sum(boot::inv.logit(predict(C.paca.alt,nw.data)))
-
-   sum(boot::inv.logit(predict(C.paca.alt,mi.data)))
-   sum(boot::inv.logit(predict(C.paca.alt,nw.data)))
-
-   sum(boot::inv.logit(predict(M.gouazoubira.full,mi.data)))
-   sum(boot::inv.logit(predict(M.gouazoubira.full,nw.data)))
-
-
-   sum(boot::inv.logit(predict(M.americana.step,mi.data)))
-   sum(boot::inv.logit(predict(M.americana.step,nw.data)))
 
 spmtz <- matrix(NA,nrow=nrow(mi.data),ncol=length(ls(pattern=".null")))
 colnames(spmtz) <- gsub(".null","",ls(pattern=".null"))
@@ -234,17 +222,22 @@ subset(prds,p.cor<0.05)
  prds <- prds[order(prds$antes),]
  o1 <- 1:nrow(prds)
  c1 <- o1^0
- c1[prds$despues<(prds$antes*.95)] <- 2
- c1[prds$antes<(prds$despues*.95)] <- 3
+ #c1[prds$despues<(prds$antes*.95)] <- 2
+ #c1[prds$antes<(prds$despues*.95)] <- 3
  c1[prds$modelo %in% "null"] <- "grey77"
  par(mar=c(4,8,1,1))
  plot(prds$antes,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="percentage of study area",ylab="",xlim=c(0,250))
- #points(prds$despues,o1+.25,pch=1,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(0,250))
  axis(1,seq(0,250,50),seq(0,250,50)*100/250)
  axis(2,o1,prds$specie,las=2,font=3)
  segments(prds$a.lower,o1,prds$a.upper,o1,col=c1)
- #segments(prds$d.lower,o1+.25,prds$d.upper,o1+.25,col=c1)
 
+# points(prds$despues,o1+.25,pch=1,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(0,250))
+# segments(prds$d.lower,o1+.25,prds$d.upper,o1+.25,col=c1)
+
+
+load(sprintf("%s/Rdata/padata-E.barbara.rda",script.dir))
+mi.link <- E.barbara.boot$link$sta
+fit <- svocc.step(E.barbara.boot,"sta")
 
  ss <- rowSums(is.na(spmtz))==0
 grd@data$rqz[ match(rownames(spmtz)[ss] ,grd@data$OID_)] <-  rowSums(spmtz)[ss]
