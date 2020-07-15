@@ -55,7 +55,7 @@ table(R2s$deltaAIC>2)
 ccis <- data.frame()
 
 
-   for (spp in subset(R2s,deltaAIC>2)$name) {
+   for (spp in subset(R2s,deltaAIC>0)$name) {
       mdl <- sprintf("%s.boot",spp)
       fit <- get(mdl)
        nm <- paste(strsplit(mdl,"\\.")[[1]][1:2],collapse=". ")
@@ -73,7 +73,9 @@ table(ccis$species,ccis$var)
    d1 <- subset(ccis,var %in% "frs") # no effect
    d1 <- subset(ccis,var %in% "dcon") # two attracted by conucos
 
-layout()
+for (vv in c("bsq","dbsq","dcom","dcon","frs")) {
+  d1 <- subset(ccis,var %in% vv)
+
    d1 <- d1[order(d1$coef),]
    o1 <- 1:nrow(d1)
    c1 <- rep(1,length(o1))
@@ -81,12 +83,14 @@ layout()
    c1[d1[,5]>0] <- 3
 
    par(mar=c(4,8,1,1))
-   plot(d1$coef,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(-10,10))
+   plot(d1$coef,o1,pch=19,col=c1,cex=1.5,axes=F,xlab=vv,ylab="",xlim=c(-10,10))
    axis(1)
    axis(2,o1,d1$species,las=2,font=3)
    segments(d1[,5],o1,d1[,6],o1,col=c1)
    abline(v=0,lty=3)
-
+   dev.copy(png,file=sprintf("%s-confint-spps.png",vv))
+   dev.off()
+ }
 
 
    plot(vbsq)
@@ -100,17 +104,6 @@ points(subset(camaras,is.na(grid))[,c("lon","lat")],cex=4)
 points(subset(eventos,is.na(grid))[,c("long","lat")],cex=4)
 
 
-plot(vbsq)
-plot(grd,add=T,border="maroon")
-points(lat~long,data=eventos,subset=!camara %in% "RAS",col=4,pch=19)
-points(lat~long,data=eventos,subset=camara %in% "RAS",col=5,pch=3)
-points(comunidades,cex=2)
-points(conucos,cex=2,pch=5)
-plot(subset(grd,cuadrado==5),add=T)
-points(subset(camaras,is.na(grid))[,c("lon","lat")],cex=4)
-points(subset(eventos,is.na(grid))[,c("long","lat")],cex=4)
-##plot(grd)
-##plot(subset(grd,OID_ %in% apply(d1[ss,],1,which.min)),add=T,col=2)
 
    tps@data %>% group_by(grid) %>% tally() %>% transmute(grid,walk=(n-mean(n))/sd(n))-> walk
    camaras %>% group_by(grid) %>% summarise(cam=sum(dias.de.trabajo),caz=max(caza.celda)) %>% transmute(grid,caz,cam=(cam-mean(cam))/sd(cam)) -> cams
@@ -182,10 +175,14 @@ rownames(spmtz) <- mi.data$grid
 prds <- data.frame()
 for (mdl in ls(pattern=".null")) {
       nm <- gsub(".null","",mdl)
-      if(nm %in% subset(R2s,deltaAIC>2)$name) {
+      if(nm %in% subset(R2s,deltaAIC>0)$name) {
          fit <- get(gsub("null","boot",mdl))
-         modelo <- "best"
-      } else {
+         if(nm %in% subset(R2s,deltaAIC>2)$name) {
+           modelo <- "best"
+         } else {
+           modelo <- "similar"
+         }
+       } else {
          fit <- get(mdl)
          modelo <- "null"
       }
@@ -225,11 +222,15 @@ subset(prds,p.cor<0.05)
  #c1[prds$despues<(prds$antes*.95)] <- 2
  #c1[prds$antes<(prds$despues*.95)] <- 3
  c1[prds$modelo %in% "null"] <- "grey77"
+ c1[prds$modelo %in% "best"] <- "blue"
  par(mar=c(4,8,1,1))
  plot(prds$antes,o1,pch=19,col=c1,cex=1.5,axes=F,xlab="percentage of study area",ylab="",xlim=c(0,250))
  axis(1,seq(0,250,50),seq(0,250,50)*100/250)
  axis(2,o1,prds$specie,las=2,font=3)
  segments(prds$a.lower,o1,prds$a.upper,o1,col=c1)
+
+ dev.copy(png,file=sprintf("Resource-use-total.png"))
+ dev.off()
 
 # points(prds$despues,o1+.25,pch=1,col=c1,cex=1.5,axes=F,xlab="coefficient",ylab="",xlim=c(0,250))
 # segments(prds$d.lower,o1+.25,prds$d.upper,o1+.25,col=c1)
