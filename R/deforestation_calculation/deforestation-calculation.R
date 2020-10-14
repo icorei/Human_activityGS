@@ -44,8 +44,8 @@ fut.prd <- predict(mdl2,data.frame(fch=c(2000,2010,2020,2030,2040,2050)),interva
 1-(fut.prd[6,2]/fut.prd[1,3])
  1-(fut.prd[6,3]/fut.prd[1,2])
 
-mdl1 <- glm(bsq~fch*prd,family=quasipoisson(log),)
-plot(bsq~fch)
-lines(fch,predict(mdl1,type="response"))
+#mdl1 <- glm(bsq~fch*prd,family=quasipoisson(log),)
+#plot(bsq~fch)
+#lines(fch,predict(mdl1,type="response"))
 
-plot(rslt$x[-1])
+#plot(rslt$x[-1])
