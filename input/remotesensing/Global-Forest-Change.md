@@ -6,12 +6,13 @@
 ## Repositorio de los datos
 
 ```sh
+export GISDATA=/opt/gisdb/extra-gisdata/
 export SRC="https://storage.googleapis.com/earthenginepartners-hansen"
 ```
 
 ## Descarga de los datos:
 
-Para todas las versiones des  v1.0 (2013) hasta v1.6 usamos un script en bash para descargar todas las capas:
+Para todas las versiones desde v1.0 (2013) hasta v1.7 usamos un script en bash para descargar todas las capas:
 
 ```sh
 
@@ -27,7 +28,26 @@ do
 done
 ```
 
-Para la Gran Sabana (bbox/: -63.1 4.6 -60.5 6.6) nos enfocamos en `10N_070W` y solamente en la última versión
+
+Creamos un VRT (Virtual Dataset) para facilitar acceso a los diferentes archivos
+
+```sh
+export VRS=GFC-2019-v1.7
+export VAR=treecover2000
+
+cd $GISDATA/sensores/Landsat/
+for VRS in GFC-2019-v1.7
+do
+  for VAR in gain lossyear treecover2000
+  do
+    gdalbuildvrt index_${VRS}_${VAR}.vrt $GISDATA/sensores/Landsat/$VRS/Hansen_${VRS}_${VAR}_*.tif
+  done
+done
+
+```
+
+
+Para la Gran Sabana (bbox/: -63.1 4.6 -60.5 6.6) podemos extraer los datos asi:
 
 ```sh
 export VRS=GFC-2019-v1.7
@@ -36,7 +56,7 @@ mkdir -p $WORKDIR/$VRS
 for VAR in gain lossyear treecover2000
 do
   ## use -co "COMPRESS=LZW" for highest compression lossless ration
-  gdalwarp -te -63.1 4.6 -60.5 6.6 -co "COMPRESS=LZW" $GISDATA/sensores/Landsat/$VRS/Hansen_${VRS}_${VAR}_10N_070W.tif $WORKDIR/$VRS/Hansen_${VRS}_${VAR}.tif
+  gdalwarp -te -63.1 4.6 -60.5 6.6 -co "COMPRESS=LZW" $GISDATA/sensores/Landsat/index_${VRS}_${VAR}.vrt $WORKDIR/$VRS/Hansen_${VRS}_${VAR}.tif
 done
 
 ```
