@@ -63,8 +63,13 @@ pa.data$pa <- coalesce(pa.data$pa,0L)
 pa.data$bloque <- factor(grd@data$cuadrado[match(pa.data$grid,grd@data$OID_)])
 ## cor(pa.data[,-4])
 
-pa.data$muestreo <- factor(pa.data$bloque %in% 1:6)
+## sampling area (Warapata vs. Kavanayen) and method (Cam+walk vs Only walk)
+pa.data$muestreo <- pa.data$bloque %in% 1:6
+pa.data$metodo <- pa.data$grid %in% cams$grid
+
 ## caz events and distance to conucos
 ##orig <- svocc(pa ~ caz + bsq + dcon + frs + dbsq| walk+cam, data=pa.data, link.sta = "cloglog", link.det = "logit", penalized = FALSE, method = c( "optim"))
 ## keep conucos and communities as two different proxies (atracting and rejecting fauna)
+
+
 save(file=sprintf("%s/Rdata/padata-%s.rda",script.dir,sp),pa.data)
