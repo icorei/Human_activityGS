@@ -25,7 +25,7 @@ if (Sys.getenv("WORKDIR") == "") {
 
 args <- commandArgs(TRUE)
 sp <- args[1]
-
+k <- args[2]
 
 ## set working directory
 setwd(work.dir)
@@ -57,95 +57,97 @@ occvars <- c("bsq + dcon + dcom + frs + dbsq",
 "bsq + dcom"
 )
 
-for (occvar in occvars) {
-   for(mi.link in linkfuns) {
-      for (detvar in detvars) {
-         if (exito != "OK") {
-            fit <- svocc(formula(sprintf("pa ~ %s |  %s",occvar,detvar)), data=pa.data, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
-            if (all(abs(fit$coefficients$sta)<6) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<4) ) {
-               fit.null <- svocc(formula(sprintf("pa ~ bloque |  %s",detvar)), data=pa.data, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
-               if (AIC(fit)<AIC(fit.null)) {
-                 assign(sprintf("%s.full",sp),fit)
-                 bfit <- bootstrap(fit, B=50)
-                 assign(sprintf("%s.boot",sp),bfit)
-                 bfit <- bootstrap(fit.null, B=50)
-                 assign(sprintf("%s.null",sp),bfit)
-                 exito <- "OK"
-               }
-            }
-         }
-      }
-   }
-}
+  ss <- switch(k,`1`=rep(T,nrow(pa.data)),`2`=pa.data$muestreo,`3`=pa.data$metodo,`4`=pa.data$metodo & pa.data$muestreo)
+
+  for (occvar in occvars) {
+     for(mi.link in linkfuns) {
+        for (detvar in detvars) {
+           if (exito != "OK") {
+              fit <- svocc(formula(sprintf("pa ~ %s |  %s",occvar,detvar)), data=pa.data, subset=ss, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
+              if (all(abs(fit$coefficients$sta)<6) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<4) ) {
+                 fit.null <- svocc(formula(sprintf("pa ~ bloque |  %s",detvar)), data=pa.data, subset=ss, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
+                 if (AIC(fit)<AIC(fit.null)) {
+                   assign(sprintf("%s.full",sp),fit)
+                   bfit <- bootstrap(fit, B=50)
+                   assign(sprintf("%s.boot",sp),bfit)
+                   bfit <- bootstrap(fit.null, B=50)
+                   assign(sprintf("%s.null",sp),bfit)
+                   exito <- "OK"
+                 }
+              }
+           }
+        }
+     }
+  }
 
 
-for (occvar in occvars) {
-   for(mi.link in linkfuns) {
-      for (detvar in detvars) {
-         if (exito != "OK") {
-            fit <- svocc(formula(sprintf("pa ~ %s |  %s",occvar,detvar)), data=pa.data, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
-            if (all(abs(fit$coefficients$sta)<10) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<6) ) {
-               fit.null <- svocc(formula(sprintf("pa ~ bloque |  %s",detvar)), data=pa.data, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
-               if (AIC(fit)<AIC(fit.null)) {
-                 assign(sprintf("%s.alt",sp),fit)
-                 bfit <- bootstrap(fit, B=50)
-                 assign(sprintf("%s.boot",sp),bfit)
-                 bfit <- bootstrap(fit.null, B=50)
-                 assign(sprintf("%s.null",sp),bfit)
-                 exito <- "OK"
-               }
-            }
-         }
-      }
-   }
-}
+  for (occvar in occvars) {
+     for(mi.link in linkfuns) {
+        for (detvar in detvars) {
+           if (exito != "OK") {
+              fit <- svocc(formula(sprintf("pa ~ %s |  %s",occvar,detvar)), data=pa.data, subset=ss, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
+              if (all(abs(fit$coefficients$sta)<10) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<6) ) {
+                 fit.null <- svocc(formula(sprintf("pa ~ bloque |  %s",detvar)), data=pa.data, subset=ss, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
+                 if (AIC(fit)<AIC(fit.null)) {
+                   assign(sprintf("%s.alt",sp),fit)
+                   bfit <- bootstrap(fit, B=50)
+                   assign(sprintf("%s.boot",sp),bfit)
+                   bfit <- bootstrap(fit.null, B=50)
+                   assign(sprintf("%s.null",sp),bfit)
+                   exito <- "OK"
+                 }
+              }
+           }
+        }
+     }
+  }
 
-for (occvar in occvars) {
-   for(mi.link in linkfuns) {
-      for (detvar in detvars) {
-         if (exito != "OK") {
-            prefit <- svocc(formula(sprintf("pa ~ %s |  %s",occvar,detvar)), data=pa.data, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
-            fit <- svocc.step(prefit, model="sta")
-            if (all(abs(fit$coefficients$sta)<6) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<4) ) {
-               fit.null <- svocc(formula(sprintf("pa ~ bloque |  %s",detvar)), data=pa.data, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
-               if (AIC(fit)<AIC(fit.null)) {
-                 assign(sprintf("%s.step",sp),fit)
-                 bfit <- bootstrap(fit, B=50)
-                 assign(sprintf("%s.boot",sp),bfit)
-                 bfit <- bootstrap(fit.null, B=50)
-                 assign(sprintf("%s.null",sp),bfit)
-                 exito <- "OK"
-               }
-            }
-         }
-      }
-   }
-}
+  for (occvar in occvars) {
+     for(mi.link in linkfuns) {
+        for (detvar in detvars) {
+           if (exito != "OK") {
+              prefit <- svocc(formula(sprintf("pa ~ %s |  %s",occvar,detvar)), data=pa.data, subset=ss, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
+              fit <- svocc.step(prefit, model="sta")
+              if (all(abs(fit$coefficients$sta)<6) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<4) ) {
+                 fit.null <- svocc(formula(sprintf("pa ~ bloque |  %s",detvar)), data=pa.data, subset=ss, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
+                 if (AIC(fit)<AIC(fit.null)) {
+                   assign(sprintf("%s.step",sp),fit)
+                   bfit <- bootstrap(fit, B=50)
+                   assign(sprintf("%s.boot",sp),bfit)
+                   bfit <- bootstrap(fit.null, B=50)
+                   assign(sprintf("%s.null",sp),bfit)
+                   exito <- "OK"
+                 }
+              }
+           }
+        }
+     }
+  }
 
-for (occvar in occvars) {
-   for(mi.link in linkfuns) {
-      for (detvar in detvars) {
-         if (exito != "OK") {
-            prefit <- svocc(formula(sprintf("pa ~ %s |  %s",occvar,detvar)), data=pa.data, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
-            fit <- svocc.step(prefit, model="sta")
-            if (all(abs(fit$coefficients$sta)<10) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<6) ) {
-               fit.null <- svocc(formula(sprintf("pa ~ bloque |  %s",detvar)), data=pa.data, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
-               if (AIC(fit)<AIC(fit.null)) {
-                 assign(sprintf("%s.step",sp),fit)
-                 bfit <- bootstrap(fit, B=50)
-                 assign(sprintf("%s.boot",sp),bfit)
-                 bfit <- bootstrap(fit.null, B=50)
-                 assign(sprintf("%s.null",sp),bfit)
-                 exito <- "OK"
-               }
-            }
-         }
-      }
-   }
-}
+  for (occvar in occvars) {
+     for(mi.link in linkfuns) {
+        for (detvar in detvars) {
+           if (exito != "OK") {
+              prefit <- svocc(formula(sprintf("pa ~ %s |  %s",occvar,detvar)), data=pa.data, subset=ss, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
+              fit <- svocc.step(prefit, model="sta")
+              if (all(abs(fit$coefficients$sta)<10) & all(!is.na(fit$std.error$sta)) & all(fit$std.error$sta<6) ) {
+                 fit.null <- svocc(formula(sprintf("pa ~ bloque |  %s",detvar)), data=pa.data, subset=ss, link.sta = mi.link, link.det = "logit", penalized = FALSE, method = c( "optim"))
+                 if (AIC(fit)<AIC(fit.null)) {
+                   assign(sprintf("%s.step",sp),fit)
+                   bfit <- bootstrap(fit, B=50)
+                   assign(sprintf("%s.boot",sp),bfit)
+                   bfit <- bootstrap(fit.null, B=50)
+                   assign(sprintf("%s.null",sp),bfit)
+                   exito <- "OK"
+                 }
+              }
+           }
+        }
+     }
+  }
 
-if (exito != "OK") {
-   bfit <- bootstrap(fit.null, B=50)
-   assign(sprintf("%s.null",sp),bfit)
-}
-save(file=sprintf("%s/Rdata/svocc-%s.rda",script.dir,sp),list=ls(pattern=".boot|.full|.null|.alt|.step"))
+  if (exito != "OK") {
+     bfit <- bootstrap(fit.null, B=50)
+     assign(sprintf("%s.null",sp),bfit)
+  }
+save(file=sprintf("%s/Rdata/svocc-%s-%s.rda",script.dir,sp,k),list=ls(pattern=".boot|.full|.null|.alt|.step"))
