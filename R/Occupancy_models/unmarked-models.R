@@ -25,7 +25,11 @@ load(GIS.data)
 eventos <- subset(eventos,bloque %in% sprintf("B%02d",1:6) & !(camara %in% c("RAS","",NA)))
 camaras <- subset(camaras,bloque %in% sprintf("B%02d",1:6) )
 
-
+camaras$bsq <- extract(vbsq,camaras[,c("lon","lat")])
+x <- extract(dist.comunidades,camaras[,c("lon","lat")])
+camaras$dcom <- (x-mean(x))/sd(x)
+x <- extract(dist.conucos,camaras[,c("lon","lat")])
+camaras$dcon <- (x-mean(x))/sd(x)
 
 #### Sampling effort: data from camera traps dividied in weeks
 
@@ -57,8 +61,8 @@ semanas <- ini + seq(from=7,by=7,length.out=28)
 eventos$sessions <- cut(eventos$fecha,breaks=semanas,label=as.character(semanas)[-1])
 table(eventos$sessions)
 
-camaras$cdg <- paste(camaras$bloque,camaras$camera)
-eventos$cdg <- paste(eventos$bloque,eventos$camara)
+camaras$cdg <- as.character(camaras$ID.original) # paste(camaras$bloque,camaras$camera)
+eventos$cdg <- as.character(camaras$ID.original)[match(paste(eventos$bloque,eventos$periodo,eventos$camara), paste(camaras$bloque,camaras$period,camaras$camera))]
 
 mtz <- matrix(0,nrow=length(unique(camaras$cdg)),ncol=length(semanas)-1,dimnames=list(unique(camaras$cdg),as.character(semanas)[-1]))
 
@@ -66,34 +70,108 @@ for (k in 1:nrow(camaras)) {
    mtz[ camaras[k,"cdg"],] <-    mtz[ camaras[k,"cdg"],] + table(cut(seq(fecha1[k],fecha2[k],by=1),breaks=semanas,label=as.character(semanas)[-1]))
 }
 # este tiene un error:
- mtz["B06 IS10",] <-  mtz["B06 IS10",]/3
+ mtz["Is10",] <-  mtz["Is10",]/3
 
 sfrz <- mtz
 mtz[mtz==0] <- NA
  mtz <- mtz*0
 
-obs <- mtz
-for (k in  seq(along=eventos$species)[eventos$species =="N.nasua"]) {
-   obs[eventos[k,"cdg"],eventos[k,"sessions"]] <-    obs[eventos[k,"cdg"],eventos[k,"sessions"]] + eventos[k,"number.of.animals"]
+ss <- rowSums(is.na(mtz))!=ncol(mtz)
+
+x <-as.numeric(semanas[-1])
+x <- (x-mean(x))/sd(x)
+obsDate <- matrix(rep(x,sum(ss)),nrow=sum(ss),byrow=T)
+sC <- data.frame(camaras[match(rownames(obs),camaras$cdg),c("bloque","H","h","dcon","dcom","caza.bloque","caza.celda2","bsq")])
+ sC$bloque <- droplevels(sC$bloque)
+ sC$h <- (sC$h-mean(sC$h))/sd(sC$h)
+ sC$H <- (sC$H-mean(sC$H))/sd(sC$H)
+
+
+ obs <- mtz
+ mi.spp <- "C.alector"
+ mi.spp <- "E.barbara"
+ mi.spp <- "C.paca"
+ sort(table(eventos$species))
+ mi.spp <- "D.leporina"
+ mi.spp <- "L.rufaxilla"
+ nsim.val <- 1000 # change to 1000 for manuscript results
+
+for (mi.spp in  levels(droplevels(eventos$species))) {
+  for (k in  seq(along=eventos$species)[eventos$species ==mi.spp]) {
+     obs[eventos[k,"cdg"],eventos[k,"sessions"]] <-    obs[eventos[k,"cdg"],eventos[k,"sessions"]] + eventos[k,"number.of.animals"]
+  }
+
+
+ UMF <- unmarkedFrameOccu((obs[ss,]>0)+0,
+ siteCovs=sC[ss,,drop=F],
+ obsCovs=list(date=obsDate))
+
+
+ plot(UMF, panels=4)
+ fm00 <- occuRN(~ dcom+date ~ H+bsq, UMF,K=30)
+ fm01 <- occuRN(~ dcom+date ~ H+bsq+dcon, UMF,K=30)
+ fm10 <- occuRN(~ dcom+date ~ H+bsq+caza.celda2, UMF,K=30)
+ fm11 <- occuRN(~ dcom+date ~ H+bsq+dcon+caza.celda2, UMF,K=30)
+
+ ts02 <- mb.gof.test(fm11,nsim=nsim.val,maxK=30)
+
 }
-UMF <- unmarkedFrameOccu(obs)
-plot(UMF, panels=4)
-fm00 <- occuRN(~ 1 ~ 1, UMF)
-ranef(fm00)
 
 
-mb.gof.test(fm00)
-
-UMF <- unmarkedFrameOccu(obs>0)
-plot(UMF, panels=4)
-fm00 <- occu(~ 1 ~ 1, UMF)
-ranef(fm00)
+mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
+save(file=mi.rda,UMF,fm00,fm01,fm10,fm11,ts02)
 
 
-mb.gof.test(fm00)
-mb.gof.test(fm00)
 
- mb.gof.test(fm00,nsim=100)
+
+AICtab <- aictab(list(fm00,fm01,fm10,fm11),modnames=c("B","B+C","B+Z","B+C+Z"),c.hat= ifelse(ts02$c.hat.est<1,1,ts02$c.hat.est))
+##aictab(list(fm00,fm02),modnames=c("B","B+C2"))
+evidence(AICtab)
+
+aggregate(confint(ranef(fm02,K=30), level=0.95),list(sC$bloque[ss]),sum)
+
+
+fmList <- fitList(Null=fm00,
+                  .caza=fm01)
+
+
+# Model selection
+
+modSel(fmList, nullmod="Null")
+
+# Extract coefficients and standard errors
+coef(fmList)
+SE(fmList)
+
+nsim.val <- 100 # change to 1000 for manuscript results
+mb.gof.test(fm01,nsim=nsim.val,maxK=30)
+
+occuRN(~ dcom+date ~ H+bsq+caza.celda2, UMF,K=30)
+nsim.val <- 5 # change to 1000 for manuscript results
+mb.gof.test(fm00,nsim=nsim.val,maxK=30)
+
+fm00 <- occuRN(~ bloque+date ~ H+bsq, UMF,K=30)
+
+fm00 <- occu(~ bloque+date ~ H+bsq, UMF,linkPsi='cloglog')
+fm00 <- occu(~ bloque+date ~ H+bsq, UMF,linkPsi='logit')
+
+fm01 <- occu(~ date ~ conuco+caza.celda2, UMF,linkPsi='cloglog')
+
+fm00 <- occuRN(~ bloque+date ~ bsq, UMF,K=30)
+fm01 <- occuRN(~ date ~ H+h+conuco, UMF,K=30)
+fm01 <- occuRN(~ date ~ bloque+conuco+caza.celda2, UMF,K=30)
+fm01 <- occu(~ date ~ bloque+conuco+caza.celda2, UMF,linkPsi='cloglog')
+fm01 <- occu(~ date ~ conuco+caza.celda2, UMF,linkPsi='cloglog')
+
+
+ranef(fm00,K=30)
+
+nsim.val <- 5 # change to 1000 for manuscript results
+mb.gof.test(fm00,nsim=nsim.val,maxK=30)
+
+mb.gof.test(fm01,nsim=nsim.val,maxK=30)
+
+
 
 
 
