@@ -3,6 +3,9 @@
 require(unmarked)
 require(AICcmodavg)
 require(chron)
+require(raster)
+
+require(MuMIn)
 
 ## ubicación de la carpeta de trabajo y el repositorio local
 
@@ -56,10 +59,11 @@ format = c(dates = "y-m-d", times = "h:m:s"))
 
 ini <- chron(dates.="2015-09-21",times.="00:00:00",format = c(dates = "y-m-d", times = "h:m:s"))
 
+## this is too sparse, c hat values remain too low
 semanas <- ini + seq(from=7,by=7,length.out=28)
-
+semanas <- ini + seq(from=0,to=210,by=21)
 eventos$sessions <- cut(eventos$fecha,breaks=semanas,label=as.character(semanas)[-1])
-table(eventos$sessions)
+table(eventos$sessions,useNA='always')
 
 camaras$cdg <- as.character(camaras$ID.original) # paste(camaras$bloque,camaras$camera)
 eventos$cdg <- as.character(camaras$ID.original)[match(paste(eventos$bloque,eventos$periodo,eventos$camara), paste(camaras$bloque,camaras$period,camaras$camera))]
@@ -81,22 +85,28 @@ ss <- rowSums(is.na(mtz))!=ncol(mtz)
 x <-as.numeric(semanas[-1])
 x <- (x-mean(x))/sd(x)
 obsDate <- matrix(rep(x,sum(ss)),nrow=sum(ss),byrow=T)
-sC <- data.frame(camaras[match(rownames(obs),camaras$cdg),c("bloque","H","h","dcon","dcom","caza.bloque","caza.celda2","bsq")])
- sC$bloque <- droplevels(sC$bloque)
- sC$h <- (sC$h-mean(sC$h))/sd(sC$h)
- sC$H <- (sC$H-mean(sC$H))/sd(sC$H)
 
 
  obs <- mtz
+
+ sC <- data.frame(camaras[match(rownames(obs),camaras$cdg),c("bloque","H","h","dcon","dcom","caza.bloque","caza.celda","caza.celda2","bsq")])
+  sC$bloque <- droplevels(sC$bloque)
+  sC$h <- (sC$h-mean(sC$h))/sd(sC$h)
+  sC$H <- (sC$H-mean(sC$H))/sd(sC$H)
+
  mi.spp <- "C.alector"
  mi.spp <- "E.barbara"
  mi.spp <- "C.paca"
  sort(table(eventos$species))
  mi.spp <- "D.leporina"
  mi.spp <- "L.rufaxilla"
- nsim.val <- 1000 # change to 1000 for manuscript results
 
-for (mi.spp in  levels(droplevels(eventos$species))) {
+ nsim.val <- 10000 # change to 1000 for manuscript results
+
+for (mi.spp in  sample(levels(droplevels(eventos$species)))) {
+
+   obs <- mtz
+
   for (k in  seq(along=eventos$species)[eventos$species ==mi.spp]) {
      obs[eventos[k,"cdg"],eventos[k,"sessions"]] <-    obs[eventos[k,"cdg"],eventos[k,"sessions"]] + eventos[k,"number.of.animals"]
   }
@@ -104,32 +114,59 @@ for (mi.spp in  levels(droplevels(eventos$species))) {
 
  UMF <- unmarkedFrameOccu((obs[ss,]>0)+0,
  siteCovs=sC[ss,,drop=F],
- obsCovs=list(date=obsDate))
+ obsCovs=list(date=obsDate[ss,],sfrz=sfrz[ss,]/21))
+ mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
+  if (!file.exists(mi.rda)) {
+    fm00 <- occuRN(~ sfrz+dcom+date ~ H+bsq, UMF,K=30)
+    fm01 <- occuRN(~ sfrz+dcom+date ~ H+bsq+dcon, UMF,K=30)
 
+    ts02 <- mb.gof.test(fm01,nsim=nsim.val,maxK=30)
+    save(file=mi.rda,UMF,fm00,fm01,ts02)
+  }
 
- plot(UMF, panels=4)
- fm00 <- occuRN(~ dcom+date ~ H+bsq, UMF,K=30)
- fm01 <- occuRN(~ dcom+date ~ H+bsq+dcon, UMF,K=30)
- fm10 <- occuRN(~ dcom+date ~ H+bsq+caza.celda2, UMF,K=30)
- fm11 <- occuRN(~ dcom+date ~ H+bsq+dcon+caza.celda2, UMF,K=30)
+  mi.rda <- sprintf("%s/Rdata/occu/%s.rda",script.dir,mi.spp)
+  if (!file.exists(mi.rda)) {
+   fm00 <- occu(~ sfrz+dcom+date ~ H+bsq, UMF,linkPsi= "cloglog")
+   fm01 <- occu(~ sfrz+dcom+date ~ H+bsq+dcon, UMF,linkPsi= "cloglog")
 
- ts02 <- mb.gof.test(fm11,nsim=nsim.val,maxK=30)
-
+   ts02 <- mb.gof.test(fm01,nsim=nsim.val)
+   save(file=mi.rda,UMF,fm00,fm01,ts02)
+  }
 }
 
+## comparar prediccion en caza celda para ver si la caceria se dirige a los sitios de mayor prob. de presencia de la especie
+##fm10 <- occu(~ dcom+date ~ H+bsq+caza.celda2, UMF,linkPsi= "cloglog") ## usar prediccion en caza.celda2
+##fm11 <- occu(~ dcom+date ~ H+bsq+dcon+caza.celda2, UMF,linkPsi= "cloglog")
+##fm10 <- occuRN(~ sfrz+dcom+date ~ H+bsq+caza.celda2, UMF,K=30)
+##fm11 <- occuRN(~ sfrz+dcom+date ~ H+bsq+dcon+caza.celda2, UMF,K=30)
 
-mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
-save(file=mi.rda,UMF,fm00,fm01,fm10,fm11,ts02)
+
+plot(UMF, panels=4)
 
 
+load("proyectos/IVIC/Hunting_in_GS/Rdata/occuRN/C.paca.rda")
 
-
-AICtab <- aictab(list(fm00,fm01,fm10,fm11),modnames=c("B","B+C","B+Z","B+C+Z"),c.hat= ifelse(ts02$c.hat.est<1,1,ts02$c.hat.est))
+AICtab <- aictab(list(fm00,fm01),modnames=c("B","B+C"),c.hat= ifelse(ts02$c.hat.est<1,1,ts02$c.hat.est))
 ##aictab(list(fm00,fm02),modnames=c("B","B+C2"))
 evidence(AICtab)
 
-aggregate(confint(ranef(fm02,K=30), level=0.95),list(sC$bloque[ss]),sum)
+modavg(list(fm00,fm01),modnames=c("B","B+C"),c.hat= ifelse(ts02$c.hat.est<1,1,ts02$c.hat.est), parm='dcon',parm.type='lambda')
 
+model.avg(list(fm00,fm01))
+
+# if c.hat <= 1
+oms <- dredge(fm01,rank="AICc")
+# if c.hat > 1
+oms <- dredge(fm01,rank="QAICc",chat=ts02$c.hat.est)
+
+summary(model.avg(oms, subset = delta < 10))
+
+
+aggregate(confint(ranef(fm01,K=30), level=0.95),list(UMF@siteCovs$bloque),sum)
+aggregate(confint(ranef(fm01,K=30), level=0.95),list(UMF@siteCovs$caza.celda),sum)
+
+#dredge(budworm.lg, rank = "QAICc", chat = chat)
+#dredge(budworm.lg, rank = "AIC")
 
 fmList <- fitList(Null=fm00,
                   .caza=fm01)
