@@ -145,7 +145,7 @@ plot(UMF, panels=4)
 
 
 load("proyectos/IVIC/Hunting_in_GS/Rdata/occuRN/C.paca.rda")
-
+load(sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir))
 AICtab <- aictab(list(fm00,fm01),modnames=c("B","B+C"),c.hat= ifelse(ts02$c.hat.est<1,1,ts02$c.hat.est))
 ##aictab(list(fm00,fm02),modnames=c("B","B+C2"))
 evidence(AICtab)

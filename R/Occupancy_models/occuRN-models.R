@@ -91,6 +91,7 @@ obsDate <- matrix(rep(x,sum(ss)),nrow=sum(ss),byrow=T)
   sC$bloque <- droplevels(sC$bloque)
   sC$h <- (sC$h-mean(sC$h))/sd(sC$h)
   sC$H <- (sC$H-mean(sC$H))/sd(sC$H)
+  sC$bsq <- sC$bsq/100
 
  mi.spp <- "C.alector"
  mi.spp <- "E.barbara"
