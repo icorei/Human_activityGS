@@ -25,6 +25,27 @@ setwd(work.dir)
 GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
 load(GIS.data)
 
+## Distance to conucos
+
+dconucos <- pointDistance(coordinates(conucos)[,1:2], camaras[,c("lon","lat")], lonlat=TRUE)
+
+#distance to nearest
+min.conucos <- apply(dconucos,2,min)/max(dconucos)/9000
+
+# IDW
+# g(u) = (sum of w[i] )
+# where the weights are the inverse p-th powers of distance,
+# w[i] = 1/d(u,x[i])^p
+# where d(u,x[i]) is the Euclidean distance from u to x[i].
+
+p <- 0.25
+w <- 1/((dconucos)^p)
+idw.conucos <- apply(w,2,sum)
+idw.conucos <- (idw.conucos - mean(idw.conucos)) / sd(idw.conucos)
+hist(idw.conucos)
+
+cor.test(camaras$buf.fragmen,idw.conucos)
+
 eventos <- subset(eventos,bloque %in% sprintf("B%02d",1:6) & !(camara %in% c("RAS","",NA)))
 camaras <- subset(camaras,bloque %in% sprintf("B%02d",1:6) )
 
@@ -146,6 +167,7 @@ plot(UMF, panels=4)
 
 load("proyectos/IVIC/Hunting_in_GS/Rdata/occuRN/C.paca.rda")
 load(sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir))
 AICtab <- aictab(list(fm00,fm01),modnames=c("B","B+C"),c.hat= ifelse(ts02$c.hat.est<1,1,ts02$c.hat.est))
 ##aictab(list(fm00,fm02),modnames=c("B","B+C2"))
 evidence(AICtab)
@@ -154,6 +176,8 @@ modavg(list(fm00,fm01),modnames=c("B","B+C"),c.hat= ifelse(ts02$c.hat.est<1,1,ts
 
 model.avg(list(fm00,fm01))
 
+load(sprintf("%s/Rdata/occu/D.leporina.rda",script.dir))
+ts02
 # if c.hat <= 1
 oms <- dredge(fm01,rank="AICc")
 # if c.hat > 1

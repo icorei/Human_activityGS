@@ -191,3 +191,58 @@ if (file.exists(GIS.data)) {
 
 #nL <- raster("nightlights/SVDNB_npp_20140101-20140131_vcmcfg_v10.tif")
 #nLights <- crop(nL,grd)
+
+
+### MODIS SubSets
+mSSt <- function(x,ll=-2000,ul=10000,cf=0.0001,os=0,setNA=0) {
+    if (!is.na(ll))
+        x[x<ll] <- NA
+    if (!is.na(ul))
+        x[x>ul] <- NA
+
+    x<- (x*cf) + os
+    if (!is.na(setNA))
+        x[x==setNA] <- NA
+    return(x)
+}
+
+archs <- dir(sprintf("%s/mapas/Venezuela/250m_16_days_NDVI.006","/opt/gisout/"),"tif$",full.names=T)
+qrchs <- dir(sprintf("%s/mapas/Venezuela/250m_16_days_VI_Quality.006","/opt/gisout"),"tif$",full.names=T)
+
+qry <- matrix(nrow=nrow(camaras),ncol=length(archs),
+                      dimnames=list(c(apply(unique(camaras[,1:3]),1,paste,collapse=":")),
+                          sapply(archs,function(x) strsplit(x,"\\.")[[1]][3])))
+
+for (aa in archs) {
+    qa <- strsplit(aa,"\\.")[[1]][3]
+    qry[,qa] <-
+        as.numeric(system(sprintf("echo '%s'| gdallocationinfo -valonly -wgs84 %s ",paste(sprintf("%s %s",camaras$lon,camaras$lat),collapse="\n"),aa),intern=T))
+}
+ ndvi.camara <- mSSt(qry)
+
+
+ ## quality of NDVI measurement
+ ## https://gis.stackexchange.com/questions/163457/handling-mod13q1-ndvi-product-quality-assessment-qa-flags
+ ## https://vip.arizona.edu/documents/MODIS/MODIS_VI_UsersGuide_June_2015_C6.pdf
+ qry <- matrix(nrow=nrow(camaras),ncol=length(qrchs),
+                       dimnames=list(c(apply(unique(camaras[,1:3]),1,paste,collapse=":")),
+                           sapply(archs,function(x) strsplit(x,"\\.")[[1]][3])))
+
+ for (aa in qrchs) {
+     qa <- strsplit(aa,"\\.")[[1]][3]
+     qry[,qa] <-
+         as.numeric(system(sprintf("echo '%s'| gdallocationinfo -valonly -wgs84 %s ",paste(sprintf("%s %s",camaras$lon,camaras$lat),collapse="\n"),aa),intern=T))
+ }
+  viq.camara <- R.utils::intToBin(qry)
+
+ ## VI quality (pixels 0 and 1) 00 produced good quality, 01 produced check QA, 10 produced but cloudy...
+ ## usefulness (pixels 2-5) 0000 highest -- 1100 lowest -- 1111 not useful
+
+ table(as.vector(substring(viq.camara,15,16)))
+
+ qry <- ndvi.camara
+ qry[!substring(viq.camara,15,16)%in% "00"] <- NA
+
+ head(viq.camara)
+ ## si usamos solo 2112...
+ ##sort(table(as.vector(viq.camara)))
