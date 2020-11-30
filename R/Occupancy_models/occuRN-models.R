@@ -172,9 +172,10 @@ obsDate <- matrix(rep(x,sum(ss)),nrow=sum(ss),byrow=T)
   mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
    if (!file.exists(mi.rda)) {
      fm01 <- occuRN(~ dras+sfrz+date ~ evi.mu+wcon, UMF,K=30)
+     fm03 <- occuRN(~ dras+sfrz+date ~ evi.mu+I(evi.mu^2)+wcon, UMF,K=30)
 
-     ts02 <- mb.gof.test(fm01,nsim=nsim.val,maxK=30)
-     save(file=mi.rda,UMF,fm01,ts02)
+     ts02 <- mb.gof.test(fm03,nsim=nsim.val,maxK=30)
+     save(file=mi.rda,UMF,fm01,fm03,ts02)
    }
 
    # mi.rda <- sprintf("%s/Rdata/occu/%s.rda",script.dir,mi.spp)

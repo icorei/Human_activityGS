@@ -26,25 +26,44 @@ setwd(work.dir)
 GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
 load(GIS.data)
 
-load(sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir))
-
 ## lack of fit
 load(sprintf("%s/Rdata/occuRN/P.concolor.rda",script.dir))
 load(sprintf("%s/Rdata/occuRN/P.tajacu.rda",script.dir))
-
+load(sprintf("%s/Rdata/occuRN/C.unicinctus.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/H.hydrochaeris.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/L.wiedii.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/O.virginianus.rda",script.dir))
 ## c-hat >1 and large standard errors, not useful (few detections)
 load(sprintf("%s/Rdata/occuRN/D.marsupialis.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/M.tridactyla.rda",script.dir))
+
+
 
 ## c-hat >1 and large standard errors, still useful?
 load(sprintf("%s/Rdata/occuRN/N.nasua.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/C.olivaceus.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/D.novemcinctus.rda",script.dir))
 
+## c-hat >1, use QAICc
+load(sprintf("%s/Rdata/occuRN/P.onca.rda",script.dir))
 
 ## c-hat <1, good
 load(sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir))
 load(sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir))
 load(sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir))
 load(sprintf("%s/Rdata/occuRN/L.pardalis.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/C.thous.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/D.imperfecta.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/E.barbara.rda",script.dir))
+
+## c-hat <1, so la la
+load(sprintf("%s/Rdata/occuRN/M.americana.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/M.gouazoubira.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/P.maximus.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/T.terrestris.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/T.tetradactyla.rda",script.dir))
 
 ts02
 # if c.hat <= 1
