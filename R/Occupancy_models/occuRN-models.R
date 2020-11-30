@@ -4,6 +4,9 @@ require(unmarked)
 require(AICcmodavg)
 require(chron)
 require(raster)
+require(cluster)
+
+require(MuMIn)
 
 ## ubicación de la carpeta de trabajo y el repositorio local
 
@@ -23,14 +26,73 @@ setwd(work.dir)
 GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
 load(GIS.data)
 
-eventos <- subset(eventos,bloque %in% sprintf("B%02d",1:6) & !(camara %in% c("RAS","",NA)))
-camaras <- subset(camaras,bloque %in% sprintf("B%02d",1:6) )
+
+
+## Distance to rastros
+
+drastros <- pointDistance(subset(eventos,camara %in% "RAS")[,c("long","lat")], camaras[,c("lon","lat")], lonlat=TRUE)
+
+# IDW
+# g(u) = (sum of w[i] )
+# where the weights are the inverse p-th powers of distance,
+# w[i] = 1/d(u,x[i])^p
+# where d(u,x[i]) is the Euclidean distance from u to x[i].
+
+p <- 0.25
+w <- 1/((drastros)^p)
+idw.rastros <- apply(w,2,sum)
+#idw.conucos <- (idw.conucos - mean(idw.conucos)) / sd(idw.conucos)
+hist(idw.rastros)
+
+
+## Distance to conucos
+
+dconucos <- pointDistance(coordinates(conucos)[,1:2], camaras[,c("lon","lat")], lonlat=TRUE)
+
+
+#distance to nearest
+min.conucos <- apply(dconucos,2,min)/max(dconucos)/9000
+
+# IDW
+# g(u) = (sum of w[i] )
+# where the weights are the inverse p-th powers of distance,
+# w[i] = 1/d(u,x[i])^p
+# where d(u,x[i]) is the Euclidean distance from u to x[i].
+
+p <- 0.25
+w <- 1/((dconucos)^p)
+idw.conucos <- apply(w,2,sum)
+##idw.conucos <- (idw.conucos - mean(idw.conucos)) / sd(idw.conucos)
+hist(idw.conucos)
+
+camaras$wcon <- idw.conucos
+camaras$dcon <- min.conucos
+camaras$dras <- idw.rastros
+
+ table(as.vector(substring(viq.camara,15,16)))
+
+ qry <- ndvi.camara
+ qry[!substring(viq.camara,15,16)%in% "00"] <- NA
+
+hdvi <- pam(dist(qry),k=3)
+table(hdvi$clustering)
+hdvi$silinfo$avg.width
+
+ camaras$evi.mu <- apply(qry,1,mean,na.rm=T)
+ camaras$evi.sg <- apply(qry,1,sd,na.rm=T)
+boxplot(camaras$evi.mu~hdvi$clustering)
+
+camaras$grp <- factor(hdvi$clustering,labels=c("savanna","shrub","forest"))
+
+cor.test(camaras$buf.fragmen,idw.conucos)
 
 camaras$bsq <- extract(vbsq,camaras[,c("lon","lat")])
-x <- extract(dist.comunidades,camaras[,c("lon","lat")])
-camaras$dcom <- (x-mean(x))/sd(x)
-x <- extract(dist.conucos,camaras[,c("lon","lat")])
-camaras$dcon <- (x-mean(x))/sd(x)
+camaras$dcom <- extract(dist.comunidades,camaras[,c("lon","lat")])
+
+eventos <- subset(eventos,bloque %in% sprintf("B%02d",1:6) & !(camara %in% c("RAS","",NA)))
+camaras <- subset(camaras,bloque %in% sprintf("B%02d",1:6) )
+## x <- extract(dist.conucos,camaras[,c("lon","lat")])
+## camaras$dcon <- (x-mean(x))/sd(x)
 
 #### Sampling effort: data from camera traps dividied in weeks
 
@@ -87,48 +149,40 @@ obsDate <- matrix(rep(x,sum(ss)),nrow=sum(ss),byrow=T)
 
  obs <- mtz
 
- sC <- data.frame(camaras[match(rownames(obs),camaras$cdg),c("bloque","H","h","dcon","dcom","caza.bloque","caza.celda","caza.celda2","bsq")])
+ sC <- data.frame(camaras[match(rownames(obs),camaras$cdg),c("bloque","H","h","dcon","wcon","dcom","evi.mu","grp","dras","caza.celda")])
   sC$bloque <- droplevels(sC$bloque)
-  sC$h <- (sC$h-mean(sC$h))/sd(sC$h)
-  sC$H <- (sC$H-mean(sC$H))/sd(sC$H)
-  sC$bsq <- sC$bsq/100
+  for (k in c("H","h","dcon","wcon","dras","evi.mu")) {
+     sC[,k] <- (sC[,k]-mean(sC[,k]))/sd(sC[,k])
+ }
 
- mi.spp <- "C.alector"
- mi.spp <- "E.barbara"
- mi.spp <- "C.paca"
- sort(table(eventos$species))
- mi.spp <- "D.leporina"
- mi.spp <- "L.rufaxilla"
 
  nsim.val <- 10000 # change to 1000 for manuscript results
+ for (mi.spp in  sample(levels(droplevels(eventos$species)))) {
+    print(mi.spp)
+    obs <- mtz
 
-for (mi.spp in  sample(levels(droplevels(eventos$species)))) {
-
-   obs <- mtz
-
-  for (k in  seq(along=eventos$species)[eventos$species ==mi.spp]) {
-     obs[eventos[k,"cdg"],eventos[k,"sessions"]] <-    obs[eventos[k,"cdg"],eventos[k,"sessions"]] + eventos[k,"number.of.animals"]
-  }
+   for (k in  seq(along=eventos$species)[eventos$species ==mi.spp]) {
+      obs[eventos[k,"cdg"],eventos[k,"sessions"]] <-    obs[eventos[k,"cdg"],eventos[k,"sessions"]] + eventos[k,"number.of.animals"]
+   }
 
 
- UMF <- unmarkedFrameOccu((obs[ss,]>0)+0,
- siteCovs=sC[ss,,drop=F],
- obsCovs=list(date=obsDate[ss,],sfrz=sfrz[ss,]/21))
- mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
-  if (!file.exists(mi.rda)) {
-    fm00 <- occuRN(~ sfrz+dcom+date ~ H+bsq, UMF,K=30)
-    fm01 <- occuRN(~ sfrz+dcom+date ~ H+bsq+dcon, UMF,K=30)
+  UMF <- unmarkedFrameOccu((obs[ss,]>0)+0,
+  siteCovs=sC[ss,,drop=F],
+  obsCovs=list(date=obsDate[ss,],sfrz=sfrz[ss,]/21))
+  mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
+   if (!file.exists(mi.rda)) {
+     fm01 <- occuRN(~ dras+sfrz+date ~ evi.mu+wcon, UMF,K=30)
 
-    ts02 <- mb.gof.test(fm01,nsim=nsim.val,maxK=30)
-    save(file=mi.rda,UMF,fm00,fm01,ts02)
-  }
+     ts02 <- mb.gof.test(fm01,nsim=nsim.val,maxK=30)
+     save(file=mi.rda,UMF,fm01,ts02)
+   }
 
-  mi.rda <- sprintf("%s/Rdata/occu/%s.rda",script.dir,mi.spp)
-  if (!file.exists(mi.rda)) {
-   fm00 <- occu(~ sfrz+dcom+date ~ H+bsq, UMF,linkPsi= "cloglog")
-   fm01 <- occu(~ sfrz+dcom+date ~ H+bsq+dcon, UMF,linkPsi= "cloglog")
-
-   ts02 <- mb.gof.test(fm01,nsim=nsim.val)
-   save(file=mi.rda,UMF,fm00,fm01,ts02)
-  }
-}
+   # mi.rda <- sprintf("%s/Rdata/occu/%s.rda",script.dir,mi.spp)
+   # if (!file.exists(mi.rda)) {
+   #  fm00 <- occu(~ sfrz+dcom+date ~ H+bsq, UMF,linkPsi= "cloglog")
+   #  fm01 <- occu(~ sfrz+dcom+date ~ H+bsq+dcon, UMF,linkPsi= "cloglog")
+   #
+   #  ts02 <- mb.gof.test(fm01,nsim=nsim.val)
+   #  save(file=mi.rda,UMF,fm00,fm01,ts02)
+   # }
+ }

@@ -19,6 +19,7 @@ if (Sys.getenv("WORKDIR") == "") {
   ## for JR:
   work.dir <- Sys.getenv("WORKDIR")
   script.dir <- Sys.getenv("SCRIPTDIR")
+  gis.dir <- Sys.getenv("GISOUT")
 }
 
 ## set working directory
@@ -206,8 +207,8 @@ mSSt <- function(x,ll=-2000,ul=10000,cf=0.0001,os=0,setNA=0) {
     return(x)
 }
 
-archs <- dir(sprintf("%s/mapas/Venezuela/250m_16_days_NDVI.006","/opt/gisout/"),"tif$",full.names=T)
-qrchs <- dir(sprintf("%s/mapas/Venezuela/250m_16_days_VI_Quality.006","/opt/gisout"),"tif$",full.names=T)
+archs <- dir(sprintf("%s/mapas/Venezuela/250m_16_days_NDVI.006",gis.dir),"tif$",full.names=T)
+qrchs <- dir(sprintf("%s/mapas/Venezuela/250m_16_days_VI_Quality.006",gis.dir),"tif$",full.names=T)
 
 qry <- matrix(nrow=nrow(camaras),ncol=length(archs),
                       dimnames=list(c(apply(unique(camaras[,1:3]),1,paste,collapse=":")),
@@ -238,11 +239,5 @@ for (aa in archs) {
  ## VI quality (pixels 0 and 1) 00 produced good quality, 01 produced check QA, 10 produced but cloudy...
  ## usefulness (pixels 2-5) 0000 highest -- 1100 lowest -- 1111 not useful
 
- table(as.vector(substring(viq.camara,15,16)))
-
- qry <- ndvi.camara
- qry[!substring(viq.camara,15,16)%in% "00"] <- NA
-
- head(viq.camara)
- ## si usamos solo 2112...
- ##sort(table(as.vector(viq.camara)))
+ obj.list <- unique(c(obj.list,"ndvi.camara","viq.camara"))
+  save(file=GIS.data,list=obj.list)

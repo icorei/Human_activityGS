@@ -4,6 +4,7 @@ require(unmarked)
 require(AICcmodavg)
 require(chron)
 require(raster)
+require(cluster)
 
 require(MuMIn)
 
@@ -25,212 +26,65 @@ setwd(work.dir)
 GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
 load(GIS.data)
 
-## Distance to conucos
-
-dconucos <- pointDistance(coordinates(conucos)[,1:2], camaras[,c("lon","lat")], lonlat=TRUE)
-
-#distance to nearest
-min.conucos <- apply(dconucos,2,min)/max(dconucos)/9000
-
-# IDW
-# g(u) = (sum of w[i] )
-# where the weights are the inverse p-th powers of distance,
-# w[i] = 1/d(u,x[i])^p
-# where d(u,x[i]) is the Euclidean distance from u to x[i].
-
-p <- 0.25
-w <- 1/((dconucos)^p)
-idw.conucos <- apply(w,2,sum)
-idw.conucos <- (idw.conucos - mean(idw.conucos)) / sd(idw.conucos)
-hist(idw.conucos)
-
-cor.test(camaras$buf.fragmen,idw.conucos)
-
-eventos <- subset(eventos,bloque %in% sprintf("B%02d",1:6) & !(camara %in% c("RAS","",NA)))
-camaras <- subset(camaras,bloque %in% sprintf("B%02d",1:6) )
-
-camaras$bsq <- extract(vbsq,camaras[,c("lon","lat")])
-x <- extract(dist.comunidades,camaras[,c("lon","lat")])
-camaras$dcom <- (x-mean(x))/sd(x)
-x <- extract(dist.conucos,camaras[,c("lon","lat")])
-camaras$dcon <- (x-mean(x))/sd(x)
-
-#### Sampling effort: data from camera traps dividied in weeks
-
-fecha1 <-chron(dates.=as.character(camaras[,"fecha.act"]),
-               times.=as.character(camaras[,"hora.act"]),
-               format = c(dates = "y-m-d", times = "h:m:s"))
-
-fecha2 <-chron(dates.=as.character(camaras[,"fecha.desact.real"]),
-               times.=as.character(camaras[,"hora.desact.real"]),
-               format = c(dates = "y-m-d", times = "h:m:s"))
-
-f1 <- with(eventos,chron(dates.=sprintf("%s-%s-%s",ano,mes,dia),
-               times.=as.character(hora.ini),
-               format = c(dates = "y-m-d", times = "h:m:s")))
-
-f2 <-with(eventos,chron(dates.=sprintf("%s-%s-%s",ano,mes,dia),
-               times.=as.character(hora.ini),
-               format = c(dates = "y-mon-d", times = "h:m:s"),
-               out.format = c(dates = "y-m-d", times = "h:m:s")))
-
-
-eventos$fecha <-chron(ifelse(is.na(f2),f1,f2),
-format = c(dates = "y-m-d", times = "h:m:s"))
-
-ini <- chron(dates.="2015-09-21",times.="00:00:00",format = c(dates = "y-m-d", times = "h:m:s"))
-
-## this is too sparse, c hat values remain too low
-semanas <- ini + seq(from=7,by=7,length.out=28)
-semanas <- ini + seq(from=0,to=210,by=21)
-eventos$sessions <- cut(eventos$fecha,breaks=semanas,label=as.character(semanas)[-1])
-table(eventos$sessions,useNA='always')
-
-camaras$cdg <- as.character(camaras$ID.original) # paste(camaras$bloque,camaras$camera)
-eventos$cdg <- as.character(camaras$ID.original)[match(paste(eventos$bloque,eventos$periodo,eventos$camara), paste(camaras$bloque,camaras$period,camaras$camera))]
-
-mtz <- matrix(0,nrow=length(unique(camaras$cdg)),ncol=length(semanas)-1,dimnames=list(unique(camaras$cdg),as.character(semanas)[-1]))
-
-for (k in 1:nrow(camaras)) {
-   mtz[ camaras[k,"cdg"],] <-    mtz[ camaras[k,"cdg"],] + table(cut(seq(fecha1[k],fecha2[k],by=1),breaks=semanas,label=as.character(semanas)[-1]))
-}
-# este tiene un error:
- mtz["Is10",] <-  mtz["Is10",]/3
-
-sfrz <- mtz
-mtz[mtz==0] <- NA
- mtz <- mtz*0
-
-ss <- rowSums(is.na(mtz))!=ncol(mtz)
-
-x <-as.numeric(semanas[-1])
-x <- (x-mean(x))/sd(x)
-obsDate <- matrix(rep(x,sum(ss)),nrow=sum(ss),byrow=T)
-
-
- obs <- mtz
-
- sC <- data.frame(camaras[match(rownames(obs),camaras$cdg),c("bloque","H","h","dcon","dcom","caza.bloque","caza.celda","caza.celda2","bsq")])
-  sC$bloque <- droplevels(sC$bloque)
-  sC$h <- (sC$h-mean(sC$h))/sd(sC$h)
-  sC$H <- (sC$H-mean(sC$H))/sd(sC$H)
-
- mi.spp <- "C.alector"
- mi.spp <- "E.barbara"
- mi.spp <- "C.paca"
- sort(table(eventos$species))
- mi.spp <- "D.leporina"
- mi.spp <- "L.rufaxilla"
-
- nsim.val <- 10000 # change to 1000 for manuscript results
-
-for (mi.spp in  sample(levels(droplevels(eventos$species)))) {
-
-   obs <- mtz
-
-  for (k in  seq(along=eventos$species)[eventos$species ==mi.spp]) {
-     obs[eventos[k,"cdg"],eventos[k,"sessions"]] <-    obs[eventos[k,"cdg"],eventos[k,"sessions"]] + eventos[k,"number.of.animals"]
-  }
-
-
- UMF <- unmarkedFrameOccu((obs[ss,]>0)+0,
- siteCovs=sC[ss,,drop=F],
- obsCovs=list(date=obsDate[ss,],sfrz=sfrz[ss,]/21))
- mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
-  if (!file.exists(mi.rda)) {
-    fm00 <- occuRN(~ sfrz+dcom+date ~ H+bsq, UMF,K=30)
-    fm01 <- occuRN(~ sfrz+dcom+date ~ H+bsq+dcon, UMF,K=30)
-
-    ts02 <- mb.gof.test(fm01,nsim=nsim.val,maxK=30)
-    save(file=mi.rda,UMF,fm00,fm01,ts02)
-  }
-
-  mi.rda <- sprintf("%s/Rdata/occu/%s.rda",script.dir,mi.spp)
-  if (!file.exists(mi.rda)) {
-   fm00 <- occu(~ sfrz+dcom+date ~ H+bsq, UMF,linkPsi= "cloglog")
-   fm01 <- occu(~ sfrz+dcom+date ~ H+bsq+dcon, UMF,linkPsi= "cloglog")
-
-   ts02 <- mb.gof.test(fm01,nsim=nsim.val)
-   save(file=mi.rda,UMF,fm00,fm01,ts02)
-  }
-}
-
-## comparar prediccion en caza celda para ver si la caceria se dirige a los sitios de mayor prob. de presencia de la especie
-##fm10 <- occu(~ dcom+date ~ H+bsq+caza.celda2, UMF,linkPsi= "cloglog") ## usar prediccion en caza.celda2
-##fm11 <- occu(~ dcom+date ~ H+bsq+dcon+caza.celda2, UMF,linkPsi= "cloglog")
-##fm10 <- occuRN(~ sfrz+dcom+date ~ H+bsq+caza.celda2, UMF,K=30)
-##fm11 <- occuRN(~ sfrz+dcom+date ~ H+bsq+dcon+caza.celda2, UMF,K=30)
-
-
-plot(UMF, panels=4)
-
-
-load("proyectos/IVIC/Hunting_in_GS/Rdata/occuRN/C.paca.rda")
 load(sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir))
 load(sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir))
-AICtab <- aictab(list(fm00,fm01),modnames=c("B","B+C"),c.hat= ifelse(ts02$c.hat.est<1,1,ts02$c.hat.est))
-##aictab(list(fm00,fm02),modnames=c("B","B+C2"))
-evidence(AICtab)
 
-modavg(list(fm00,fm01),modnames=c("B","B+C"),c.hat= ifelse(ts02$c.hat.est<1,1,ts02$c.hat.est), parm='dcon',parm.type='lambda')
+## lack of fit
+load(sprintf("%s/Rdata/occuRN/P.concolor.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/P.tajacu.rda",script.dir))
 
-model.avg(list(fm00,fm01))
+## c-hat >1 and large standard errors, not useful (few detections)
+load(sprintf("%s/Rdata/occuRN/D.marsupialis.rda",script.dir))
 
-load(sprintf("%s/Rdata/occu/D.leporina.rda",script.dir))
+## c-hat >1 and large standard errors, still useful?
+load(sprintf("%s/Rdata/occuRN/N.nasua.rda",script.dir))
+
+
+## c-hat <1, good
+load(sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/L.pardalis.rda",script.dir))
+
 ts02
 # if c.hat <= 1
 oms <- dredge(fm01,rank="AICc")
 # if c.hat > 1
+#
 oms <- dredge(fm01,rank="QAICc",chat=ts02$c.hat.est)
 
 summary(model.avg(oms, subset = delta < 10))
 
+avgmod.95p <- model.avg(oms, cumsum(weight) <= .95,fit=T)
+prd <- predict(avgmod.95p,type='state')
 
-aggregate(confint(ranef(fm01,K=30), level=0.95),list(UMF@siteCovs$bloque),sum)
-aggregate(confint(ranef(fm01,K=30), level=0.95),list(UMF@siteCovs$caza.celda),sum)
+#  The ‘subset’ (or ‘conditional’) average only averages over the
+     # models where the parameter appears. An alternative, the ‘full’
+     # average assumes that a variable is included in every model, but in
+     # some models the corresponding coefficient (and its respective
+     # variance) is set to zero.  Unlike the ‘subset average’, it does
+     # not have a tendency of biasing the value away from zero. The
+     # ‘full’ average is a type of shrinkage estimator, and for variables
+     # with a weak relationship to the response it is smaller than
+     # ‘subset’ estimators.
+
+
+summary(avgmod.95p)
+aggregate(prd$fit,list(UMF@siteCovs$bloque),sum)
+ aggregate(prd$fit,list(UMF@siteCovs$caza.celda),mean)
+boxplot(prd$fit~UMF@siteCovs$caza.celda,varwidth=T)
+
+
+#modavg(list(fm00,fm01),modnames=c("B","B+C"),c.hat= ifelse(ts02$c.hat.est<1,1,ts02$c.hat.est), parm='dcon',parm.type='lambda')
+
+
+
+aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$bloque),sum)
+aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$caza.celda),sum)
 
 #dredge(budworm.lg, rank = "QAICc", chat = chat)
 #dredge(budworm.lg, rank = "AIC")
 
-fmList <- fitList(Null=fm00,
-                  .caza=fm01)
-
-
-# Model selection
-
-modSel(fmList, nullmod="Null")
-
-# Extract coefficients and standard errors
-coef(fmList)
-SE(fmList)
-
-nsim.val <- 100 # change to 1000 for manuscript results
-mb.gof.test(fm01,nsim=nsim.val,maxK=30)
-
-occuRN(~ dcom+date ~ H+bsq+caza.celda2, UMF,K=30)
-nsim.val <- 5 # change to 1000 for manuscript results
-mb.gof.test(fm00,nsim=nsim.val,maxK=30)
-
-fm00 <- occuRN(~ bloque+date ~ H+bsq, UMF,K=30)
-
-fm00 <- occu(~ bloque+date ~ H+bsq, UMF,linkPsi='cloglog')
-fm00 <- occu(~ bloque+date ~ H+bsq, UMF,linkPsi='logit')
-
-fm01 <- occu(~ date ~ conuco+caza.celda2, UMF,linkPsi='cloglog')
-
-fm00 <- occuRN(~ bloque+date ~ bsq, UMF,K=30)
-fm01 <- occuRN(~ date ~ H+h+conuco, UMF,K=30)
-fm01 <- occuRN(~ date ~ bloque+conuco+caza.celda2, UMF,K=30)
-fm01 <- occu(~ date ~ bloque+conuco+caza.celda2, UMF,linkPsi='cloglog')
-fm01 <- occu(~ date ~ conuco+caza.celda2, UMF,linkPsi='cloglog')
-
-
-ranef(fm00,K=30)
-
-nsim.val <- 5 # change to 1000 for manuscript results
-mb.gof.test(fm00,nsim=nsim.val,maxK=30)
-
-mb.gof.test(fm01,nsim=nsim.val,maxK=30)
 
 
 
