@@ -1,0 +1,292 @@
+---
+title: "Test of garden hunting hypothesis for mammals in La Gran Sabana, Venezuela using occupancy models"
+author: "Stachowicz, I; Ferrer-Paris, J.R.; Sanchez-Mercado, A. (in prep)"
+date: December 2, 2020
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE)
+require(unmarked)
+require(AICcmodavg)
+require(chron)
+require(raster)
+require(cluster)
+require(MuMIn)
+require(dplyr)
+
+
+if (Sys.getenv("WORKDIR") == "") {
+   ## for Izza:
+   work.dir <- "D:/PROJECTS/Gran Sabana/Metodologia"
+   script.dir <- "???"
+} else {
+   ## for JR:
+   work.dir <- Sys.getenv("WORKDIR")
+   script.dir <- Sys.getenv("SCRIPTDIR")
+}
+
+setwd(work.dir)
+GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
+load(GIS.data)
+
+```
+
+# Methods
+
+## Model definition
+
+## Covariates of probability of detection
+## Covariates of probability of occupancy - frecuency of use
+
+For the location of each camera, we downloaded the time series of  Terra Moderate Resolution Imaging Spectroradiometer (MODIS) Vegetation Indices (MOD13Q1) Version 6 with a temporal resolution of 16 days and a spatial resolution of 250 meter (Data source: https://lpdaac.usgs.gov/products/mod13q1v006/).
+
+We used the Normalized Difference Vegetation Index (NDVI) measurements from 2010 to 2019. The time series have n=215 total measurements per camera, but we considered only those with good reliability and production quality of the observations (see product user manual in https://lpdaac.usgs.gov/documents/103/MOD13_User_Guide_V6.pdf).
+
+## Habitat classification
+
+
+
+# Results
+
+## Goodness of fit
+
+MacKenzie and Bailey Goodness-of-fit Test for  Royle-Nichols Occupancy Models.
+
+```{r }
+tbl <- data.frame()
+for (arch in dir(sprintf("%s/Rdata/occuRN/",script.dir))) {
+   load(sprintf("%s/Rdata/occuRN/%s",script.dir,arch))
+ tbl <- rbind(tbl,data.frame(spp=sub(".rda$","",arch),
+ n.detect= sum(UMF@y,na.rm=T),
+ts02[c("chi.square","p.value","c.hat.est")],
+large.coefs=min(max(abs(coef(fm01))),max(abs(coef(fm03)))),
+large.SE=min(max(SE(fm01)),max(SE(fm03)))))
+
+}
+
+```
+
+These species show one or more signs of lack of fit:
+
+```{r }
+tbl %>% filter(p.value<.17 | p.value > .85 | c.hat.est > 4 | c.hat.est <0.30) %>% arrange(c.hat.est)
+
+```
+
+These species appear to have  a good fit but the model has over-dispersion, and might have problems with large coeficients and standard errors
+
+```{r }
+tbl %>% filter(p.value>.15 & p.value < .85 & c.hat.est >1 & c.hat.est <4 & large.coefs>4) %>% arrange(c.hat.est)
+```
+
+For this species, the over-dispersion might be accounted for by using quasi-AICc
+```{r }
+tbl %>% filter(p.value>.15 & p.value < .85 & c.hat.est >1 & c.hat.est <4 & large.coefs<4) %>% arrange(c.hat.est)
+```
+
+These species appear to have  a good fit and no signs of over-dispersion, but could have problems with large coeficients or standard errors:
+
+```{r }
+tbl %>% filter(p.value>.15 & p.value < .85 & c.hat.est <1 & c.hat.est >0.30 & large.coefs>4 & large.SE>1) %>% arrange(c.hat.est)
+```
+
+These species seem to have  a good fit and no signs of over-dispersion:
+
+```{r }
+tbl %>% filter(p.value>.15 & p.value < .85 & c.hat.est <1 & c.hat.est >0.30 & (large.coefs<4 | large.SE<1)) %>% arrange(c.hat.est)
+```
+
+## Model averaging
+
+### L. rufaxilla
+
+Most support for p(sfrz)+lam(evi.mu)+lam(I(evi.mu^2)), significant conditional coeficients for p(sfrz). Positive ("atracted") but non-significant effect of conucos
+
+```{r }
+load(sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+### C. paca
+Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(I(evi.mu^2)), significant conditional coeficients for those parameters. Very weak and non-significative effect of conucos
+
+```{r }
+load(sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+### D. leporina
+Used linear model for EVI. Most support for p(sfrz)+lam(evi.mu), significant conditional coefficients for those parameters. Weak negative ("avoids") non-significant effect of conucos
+
+```{r }
+load(sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir))
+oms <- dredge(fm01,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+
+### C.thous
+
+Used linear model for EVI. Most support for p(sfrz)+lam(evi.mu), significant conditional coefficients for lam(evi.mu) (negative association). Weak negative ("avoids") non-significant effect of conucos
+
+```{r }
+load(sprintf("%s/Rdata/occuRN/C.thous.rda",script.dir))
+oms <- dredge(fm01,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+### D. kappleri
+
+Most support for p(sfrz)+lam(evi.mu) but no significant conditional coefficients . Very weak  non-significant effect of conucos.
+
+```{r }
+load(sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+### C. alector
+
+Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional coeficients for those parameters. Strong negative significative effect of conucos.
+
+```{r }
+load(sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+
+### D. novemcinctus
+
+```{r }
+load(sprintf("%s/Rdata/occuRN/D.novemcinctus.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+### M. americana
+ Best model is p(date)   p(sfrz) lam(evi.mu) but very large coeficients for p(Int) and p(sfrz)
+```{r }
+load(sprintf("%s/Rdata/occuRN/M.americana.rda",script.dir))
+oms <- dredge(fm01,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+### T.tetradactyla
+
+Null model is best model
+```{r }
+load(sprintf("%s/Rdata/occuRN/T.tetradactyla.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+## E.barbara       16  309.85514  0.4835 0.5318033    5.231910 1.280346
+```{r }
+load(sprintf("%s/Rdata/occuRN/E.barbara.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+4   T.terrestris        8  127.78052  0.4680 0.5492710    7.463467 3.023464
+5   D.imperfecta       11  336.36679  0.3657 0.5671526    4.794876 1.644272
+6  M.gouazoubira       33  940.58630  0.5254 0.6932379    5.468643 1.090774
+7        N.nasua        5  139.96839  0.3327 0.8382985    6.180975 2.531680
+8   M.tridactyla       13  397.71195  0.2259 0.9766572    6.440562 1.919368
+>
+
+
+
+
+```{r }
+load(sprintf("%s/Rdata/occuRN/T.terrestris.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+```{r }
+load(sprintf("%s/Rdata/occuRN/D.imperfecta.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+```{r }
+load(sprintf("%s/Rdata/occuRN/M.gouazoubira.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+```{r }
+load(sprintf("%s/Rdata/occuRN/N.nasua.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+```{r }
+load(sprintf("%s/Rdata/occuRN/M.tridactyla.rda",script.dir))
+oms <- dredge(fm03,rank="AICc")
+summary(model.avg(oms, subset = delta < 10))
+```
+
+
+## c-hat >1 and large standard errors, not useful (few detections)
+load(sprintf("%s/Rdata/occuRN/O.virginianus.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/L.wiedii.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/D.marsupialis.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/C.olivaceus.rda",script.dir))
+
+ts02
+oms <- dredge(fm01,rank="QAICc",chat=ts02$c.hat.est)
+summary(model.avg(oms, subset = delta < 10))
+
+## c-hat >1, use QAICc
+load(sprintf("%s/Rdata/occuRN/P.onca.rda",script.dir))
+
+ts02
+oms <- dredge(fm01,rank="QAICc",chat=ts02$c.hat.est)
+summary(model.avg(oms, subset = delta < 10))
+
+## c-hat <1, good
+load(sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir))
+
+load(sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/L.pardalis.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/C.thous.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/D.imperfecta.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/E.barbara.rda",script.dir))
+
+
+ts02
+# if c.hat <= 1
+
+## c-hat <1, so la la
+load(sprintf("%s/Rdata/occuRN/M.americana.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/M.gouazoubira.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/P.maximus.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/T.terrestris.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/T.tetradactyla.rda",script.dir))
+
+load(sprintf("%s/Rdata/occuRN/M.tridactyla.rda",script.dir))
+load(sprintf("%s/Rdata/occuRN/N.nasua.rda",script.dir))
+
+load(sprintf("%s/Rdata/occuRN/D.novemcinctus.rda",script.dir))
+
+avgmod.95p <- model.avg(oms, cumsum(weight) <= .95,fit=T)
+prd <- predict(avgmod.95p,type='state')
+
+
+
+summary(avgmod.95p)
+aggregate(prd$fit,list(UMF@siteCovs$bloque),sum)
+ aggregate(prd$fit,list(UMF@siteCovs$caza.celda),mean)
+boxplot(prd$fit~UMF@siteCovs$caza.celda,varwidth=T)
+
+
+
+
+
+aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$bloque),sum)
+aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$caza.celda),sum)
