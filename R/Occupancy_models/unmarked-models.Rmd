@@ -66,15 +66,14 @@ large.SE=min(max(SE(fm01)),max(SE(fm03)))))
 
 ```
 
-These species show one or more signs of lack of fit:
+These species show one or more signs of lack of fit, probably due to the low number of detections:
 
 ```{r }
 tbl %>% filter(p.value<.17 | p.value > .85 | c.hat.est > 4 | c.hat.est <0.30) %>% arrange(c.hat.est)
 
 ```
 
-These species appear to have  a good fit but the model has over-dispersion, and might have problems with large coeficients and standard errors
-
+These species appear to have  a good fit but the model has over-dispersion ($c-hat >1$), and might have problems with large coeficients and standard errors
 ```{r }
 tbl %>% filter(p.value>.15 & p.value < .85 & c.hat.est >1 & c.hat.est <4 & large.coefs>4) %>% arrange(c.hat.est)
 ```
@@ -100,20 +99,47 @@ tbl %>% filter(p.value>.15 & p.value < .85 & c.hat.est <1 & c.hat.est >0.30 & (l
 
 ### L. rufaxilla
 
-Most support for p(sfrz)+lam(evi.mu)+lam(I(evi.mu^2)), significant conditional coeficients for p(sfrz). Positive ("atracted") but non-significant effect of conucos
+
+Sum of AICc weights indicate a clear effect of p(sfrz) and large support for lam(evi.mu). wcon has AICcw=0.29
 
 ```{r }
-load(sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+arch <- sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
 ```
 
-### C. paca
-Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(I(evi.mu^2)), significant conditional coeficients for those parameters. Very weak and non-significative effect of conucos
+Significant conditional coeficients for p(sfrz). Positive ("atracted") but non-significant effect of conucos
 
 ```{r }
-load(sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
+
+
+```
+
+
+### C. paca
+Very strong support for p(sfrz)+lam(evi.mu)+lam(I(evi.mu^2)), and strong support for p(dras), but only 0.23 for wcon.
+
+```{r }
+arch <- sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
+```
+
+Significant conditional coeficients for those parameters. Very weak and non-significative effect of conucos
+
+```{r }
 summary(model.avg(oms, subset = delta < 10))
 ```
 
@@ -121,9 +147,22 @@ summary(model.avg(oms, subset = delta < 10))
 Used linear model for EVI. Most support for p(sfrz)+lam(evi.mu), significant conditional coefficients for those parameters. Weak negative ("avoids") non-significant effect of conucos
 
 ```{r }
-load(sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir))
-oms <- dredge(fm01,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+arch <- sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir)
+
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
+```
+
+Coeficients with 95% CI
+```{r }
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
 ```
 
 
@@ -132,148 +171,259 @@ summary(model.avg(oms, subset = delta < 10))
 Used linear model for EVI. Most support for p(sfrz)+lam(evi.mu), significant conditional coefficients for lam(evi.mu) (negative association). Weak negative ("avoids") non-significant effect of conucos
 
 ```{r }
-load(sprintf("%s/Rdata/occuRN/C.thous.rda",script.dir))
-oms <- dredge(fm01,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+arch <- sprintf("%s/Rdata/occuRN/C.thous.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm01,rank="AICc")
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
 ```
+
+Coeficients with 95% CI
+```{r }
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
+```
+
 
 ### D. kappleri
 
 Most support for p(sfrz)+lam(evi.mu) but no significant conditional coefficients . Very weak  non-significant effect of conucos.
 
 ```{r }
-load(sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+arch <- sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
 ```
+
+Coeficients with 95% CI
+```{r }
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
+```
+
 
 ### C. alector
 
 Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional coeficients for those parameters. Strong negative significative effect of conucos.
 
 ```{r }
-load(sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+arch <- sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
 ```
+
+Coeficients with 95% CI
+```{r }
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
+```
+
 
 
 ### D. novemcinctus
 
 ```{r }
-load(sprintf("%s/Rdata/occuRN/D.novemcinctus.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+arch <- sprintf("%s/Rdata/occuRN/D.novemcinctus.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
 ```
+
+Coeficients with 95% CI
+```{r }
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
+```
+
 
 ### M. americana
  Best model is p(date)   p(sfrz) lam(evi.mu) but very large coeficients for p(Int) and p(sfrz)
 ```{r }
-load(sprintf("%s/Rdata/occuRN/M.americana.rda",script.dir))
-oms <- dredge(fm01,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+arch <- sprintf("%s/Rdata/occuRN/M.americana.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm01,rank="AICc")
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
 ```
+
+Coeficients with 95% CI
+```{r }
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
+```
+
 
 ### T.tetradactyla
 
 Null model is best model
 ```{r }
-load(sprintf("%s/Rdata/occuRN/T.tetradactyla.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+arch <- sprintf("%s/Rdata/occuRN/T.tetradactyla.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
 ```
 
-## E.barbara       16  309.85514  0.4835 0.5318033    5.231910 1.280346
+Coeficients with 95% CI
 ```{r }
-load(sprintf("%s/Rdata/occuRN/E.barbara.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
 ```
 
-4   T.terrestris        8  127.78052  0.4680 0.5492710    7.463467 3.023464
-5   D.imperfecta       11  336.36679  0.3657 0.5671526    4.794876 1.644272
-6  M.gouazoubira       33  940.58630  0.5254 0.6932379    5.468643 1.090774
-7        N.nasua        5  139.96839  0.3327 0.8382985    6.180975 2.531680
-8   M.tridactyla       13  397.71195  0.2259 0.9766572    6.440562 1.919368
->
+
+### E.barbara     
+```{r }
+arch <- sprintf("%s/Rdata/occuRN/E.barbara.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
+```
+
+Coeficients with 95% CI
+```{r }
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
+```
 
 
+
+### T.terrestris  
 
 
 ```{r }
-load(sprintf("%s/Rdata/occuRN/T.terrestris.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+arch <- sprintf("%s/Rdata/occuRN/T.terrestris.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
 ```
+
+Coeficients with 95% CI
+```{r }
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
+```
+
+
+### D.imperfecta
 
 ```{r }
-load(sprintf("%s/Rdata/occuRN/D.imperfecta.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
-summary(model.avg(oms, subset = delta < 10))
+arch <- sprintf("%s/Rdata/occuRN/D.imperfecta.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
 ```
+
+Coeficients with 95% CI
+```{r }
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
+```
+
+
+### M.gouazoubira
 
 ```{r }
-load(sprintf("%s/Rdata/occuRN/M.gouazoubira.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
+arch <- sprintf("%s/Rdata/occuRN/M.gouazoubira.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
 summary(model.avg(oms, subset = delta < 10))
 ```
+
+### N.nasua    
+
 ```{r }
-load(sprintf("%s/Rdata/occuRN/N.nasua.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
+arch <- sprintf("%s/Rdata/occuRN/N.nasua.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
 summary(model.avg(oms, subset = delta < 10))
 ```
+
+### M.tridactyla    
+
 ```{r }
-load(sprintf("%s/Rdata/occuRN/M.tridactyla.rda",script.dir))
-oms <- dredge(fm03,rank="AICc")
+arch <- sprintf("%s/Rdata/occuRN/M.tridactyla.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   save(file=arch,list=c(lst,"oms"))
+}
 summary(model.avg(oms, subset = delta < 10))
 ```
 
 
-## c-hat >1 and large standard errors, not useful (few detections)
-load(sprintf("%s/Rdata/occuRN/O.virginianus.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/L.wiedii.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/D.marsupialis.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/C.olivaceus.rda",script.dir))
+### P. onca
 
-ts02
-oms <- dredge(fm01,rank="QAICc",chat=ts02$c.hat.est)
+If c-hat >1, then we use QAICc
+
+```{r }
+arch <- sprintf("%s/Rdata/occuRN/P.onca.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm01,rank="QAICc",chat=ts02$c.hat.est)
+   save(file=arch,list=c(lst,"oms"))
+}
 summary(model.avg(oms, subset = delta < 10))
 
-## c-hat >1, use QAICc
-load(sprintf("%s/Rdata/occuRN/P.onca.rda",script.dir))
+```
 
-ts02
-oms <- dredge(fm01,rank="QAICc",chat=ts02$c.hat.est)
-summary(model.avg(oms, subset = delta < 10))
-
-## c-hat <1, good
-load(sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir))
-
-load(sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/L.pardalis.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/C.thous.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/D.imperfecta.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/E.barbara.rda",script.dir))
+Sum of QAICc-weights
+```{r }
+sw(oms)
+```
 
 
-ts02
-# if c.hat <= 1
 
-## c-hat <1, so la la
-load(sprintf("%s/Rdata/occuRN/M.americana.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/M.gouazoubira.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/P.maximus.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/T.terrestris.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/T.tetradactyla.rda",script.dir))
-
-load(sprintf("%s/Rdata/occuRN/M.tridactyla.rda",script.dir))
-load(sprintf("%s/Rdata/occuRN/N.nasua.rda",script.dir))
-
-load(sprintf("%s/Rdata/occuRN/D.novemcinctus.rda",script.dir))
-
+<!--
 avgmod.95p <- model.avg(oms, cumsum(weight) <= .95,fit=T)
 prd <- predict(avgmod.95p,type='state')
 
@@ -289,4 +439,4 @@ boxplot(prd$fit~UMF@siteCovs$caza.celda,varwidth=T)
 
 
 aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$bloque),sum)
-aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$caza.celda),sum)
+aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$caza.celda),sum) -->
