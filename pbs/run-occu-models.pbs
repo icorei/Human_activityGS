@@ -1,0 +1,17 @@
+#!/usr/bin/bash
+
+#PBS -l select=1:ncpus=16:mem=32gb
+#PBS -l walltime=2:00:00
+#PBS -N occu-models
+#PBS -k eod
+#PBS -j oe
+#PBS -J 1-32
+
+
+source $HOME/proyectos/IVIC/Hunting_in_GS/env/load.sh
+
+cd $WORKDIR
+
+module add R/4.0.2
+
+Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/occuRN-models.R

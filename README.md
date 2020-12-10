@@ -22,8 +22,13 @@ Contains code (R scripts) for analysis and output figures in pdf
 
 Start interactive session with graphical session and test...
 ```sh
-ssh $zID@katana.restech.unsw.edu.au
-source $HOME/proyectos/IVIC/Hunting_in_GS
+ssh -X $zID@katana.restech.unsw.edu.au
+source $HOME/proyectos/IVIC/Hunting_in_GS/env/load.sh
 cd $WORKDIR
 qsub -I -X -l select=1:ncpus=32:mem=16gb,walltime=4:00:00
+
+cd $TMPDIR
+module add R/4.0.2
+source $HOME/proyectos/IVIC/Hunting_in_GS/env/load.sh
+
 ```
