@@ -11,6 +11,16 @@ roraima)
   export GISDB=$HOME/gisdb
   export GISOUT=$HOME/gisout
   ;;
+katana1)
+  export GISDATA=/srv/scratch/$(whoami)/gisdata
+  export GISDB=/srv/scratch/$(whoami)/gisdb
+  export GISOUT=/srv/scratch/$(whoami)/gisout
+  ;;
+katana2)
+  export GISDATA=/srv/scratch/$(whoami)/gisdata
+  export GISDB=/srv/scratch/$(whoami)/gisdb
+  export GISOUT=/srv/scratch/$(whoami)/gisout
+  ;;
 esac
 
 export SCRIPTDIR=$HOME/proyectos/IVIC/Hunting_in_GS
