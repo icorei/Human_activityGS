@@ -11,9 +11,9 @@ require(MuMIn)
 
 work.dir <- Sys.getenv("WORKDIR")
 script.dir <- Sys.getenv("SCRIPTDIR")
-slcspp <- Sys.getenv("PBS_ARRAY_INDEX")
+slcspp <- as.numeric(Sys.getenv("PBS_ARRAY_INDEX"))
 
-Sys.getenv()
+##Sys.getenv()
 
 cat(sprintf("PBS ARRAY INDEX is %s\n",slcspp))
 
@@ -159,7 +159,7 @@ for (k in c("H","h","dcon","wcon","dras","ndvi.mu","buf.fragmen")) {
 
 nsim.val <- 10000 # change to 1000 for manuscript results
 mi.spp <- levels(droplevels(eventos$species))[slcspp]
-print(mi.spp)
+cat(sprintf("La especie es %s (nr. %s)",mi.spp,slcspp))
 obs <- mtz
 
 for (k in  seq(along=eventos$species)[eventos$species ==mi.spp]) {
