@@ -32,3 +32,11 @@ module add R/4.0.2
 source $HOME/proyectos/IVIC/Hunting_in_GS/env/load.sh
 
 ```
+Now run:
+
+```sh
+cd $WORKDIR
+qsub -J 1-2 $SCRIPTDIR/pbs/run-occu-models.pbs
+qstat -tu $(whoami)
+
+```

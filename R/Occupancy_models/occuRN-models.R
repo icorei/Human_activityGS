@@ -9,17 +9,13 @@ require(MuMIn)
 
 ## ubicación de la carpeta de trabajo y el repositorio local
 
-if (Sys.getenv("WORKDIR") == "") {
-   ## for Izza:
-   work.dir <- "D:/PROJECTS/Gran Sabana/Metodologia"
-   script.dir <- "???"
-} else {
-   ## for JR:
-   work.dir <- Sys.getenv("WORKDIR")
-   script.dir <- Sys.getenv("SCRIPTDIR")
-   slcspp <- Sys.getenv("PBS_ARRAY_INDEX")
-}
+work.dir <- Sys.getenv("WORKDIR")
+script.dir <- Sys.getenv("SCRIPTDIR")
+slcspp <- Sys.getenv("PBS_ARRAY_INDEX")
 
+Sys.getenv()
+
+cat(sprintf("PBS ARRAY INDEX is %s\n",slcspp))
 
 ## set working directory
 setwd(work.dir)
