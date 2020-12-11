@@ -37,6 +37,7 @@ Now run:
 ```sh
 cd $WORKDIR
 qsub -J 1-2 $SCRIPTDIR/pbs/run-occu-models.pbs
+qsub -J 3-31 $SCRIPTDIR/pbs/run-occu-models.pbs
 qstat -tu $(whoami)
 
 ```
