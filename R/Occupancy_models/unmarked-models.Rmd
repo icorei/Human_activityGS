@@ -58,42 +58,42 @@ for (arch in dir(sprintf("%s/Rdata/occuRN/",script.dir))) {
    load(sprintf("%s/Rdata/occuRN/%s",script.dir,arch))
  tbl <- rbind(tbl,data.frame(spp=sub(".rda$","",arch),
  n.detect= sum(UMF@y,na.rm=T),
-ts02[c("chi.square","p.value","c.hat.est")],
-large.coefs=min(max(abs(coef(fm01))),max(abs(coef(fm03)))),
-large.SE=min(max(SE(fm01)),max(SE(fm03)))))
+ts03[c("chi.square","p.value","c.hat.est")],
+large.coefs=min(max(abs(coef(fm01))),max(abs(coef(fm01)))),
+large.SE=min(max(SE(fm01)),max(SE(fm01)))))
 
 }
+tbl %>% mutate(overdispersion=c.hat.est > 1 & c.hat.est <4, coef.problems=large.coefs>4 | large.SE>4) %>%
+  mutate(lack.of.fit=p.value<.10 | p.value > .9 | c.hat.est > 4 | c.hat.est <0.30 ) -> tbl
+
+  table(tbl$lack.of.fit,tbl$coef.problems)
 
 ```
 
 These species show one or more signs of lack of fit, probably due to the low number of detections:
 
 ```{r }
-tbl %>% filter(p.value<.17 | p.value > .85 | c.hat.est > 4 | c.hat.est <0.30) %>% arrange(c.hat.est)
+tbl %>% filter(lack.of.fit)
 
 ```
 
-These species appear to have  a good fit but the model has over-dispersion ($c-hat >1$), and might have problems with large coeficients and standard errors
+These species appear to have  a good fit but might have problems with large coeficients and standard errors
 ```{r }
-tbl %>% filter(p.value>.15 & p.value < .85 & c.hat.est >1 & c.hat.est <4 & large.coefs>4) %>% arrange(c.hat.est)
+tbl %>% filter(!lack.of.fit & coef.problems) %>% arrange(c.hat.est)
 ```
 
 For this species, the over-dispersion might be accounted for by using quasi-AICc
 ```{r }
-tbl %>% filter(p.value>.15 & p.value < .85 & c.hat.est >1 & c.hat.est <4 & large.coefs<4) %>% arrange(c.hat.est)
-```
-
-These species appear to have  a good fit and no signs of over-dispersion, but could have problems with large coeficients or standard errors:
-
-```{r }
-tbl %>% filter(p.value>.15 & p.value < .85 & c.hat.est <1 & c.hat.est >0.30 & large.coefs>4 & large.SE>1) %>% arrange(c.hat.est)
+tbl %>% filter(!lack.of.fit & !coef.problems & overdispersion) %>% arrange(c.hat.est)
 ```
 
 These species seem to have  a good fit and no signs of over-dispersion:
 
 ```{r }
-tbl %>% filter(p.value>.15 & p.value < .85 & c.hat.est <1 & c.hat.est >0.30 & (large.coefs<4 | large.SE<1)) %>% arrange(c.hat.est)
+tbl %>% filter(!lack.of.fit & !coef.problems & !overdispersion) %>% arrange(c.hat.est)
+
 ```
+
 
 ## Model averaging
 
@@ -106,13 +106,13 @@ Sum of AICc weights indicate a clear effect of p(sfrz) and large support for lam
 arch <- sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir)
 lst <- (load(arch))
 if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+   oms <- dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),))
    save(file=arch,list=c(lst,"oms"))
 }
 sw(oms)
 ```
 
-Significant conditional coeficients for p(sfrz). Positive ("atracted") but non-significant effect of conucos
+Significant conditional coeficients for p(sfrz). Negative relationship with distance to conuco ("atracted") but non-significant effect of conucos
 
 ```{r }
 mavg <- model.avg(oms, subset = delta < 10)
@@ -124,20 +124,19 @@ cbind( coef(mavg),confint(mavg))
 
 
 ### C. paca
-Very strong support for p(sfrz)+lam(evi.mu)+lam(I(evi.mu^2)), and strong support for p(dras), but only 0.23 for wcon.
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir)
 lst <- (load(arch))
 if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+  oms <- dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),))
    save(file=arch,list=c(lst,"oms"))
 }
 sw(oms)
 
 ```
 
-Significant conditional coeficients for those parameters. Very weak and non-significative effect of conucos
+Significant conditional coeficients for those parameters. Negative relationship with distance to conuco ("atracted") of conucos
 
 ```{r }
 summary(model.avg(oms, subset = delta < 10))
@@ -151,7 +150,8 @@ arch <- sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir)
 
 lst <- (load(arch))
 if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+##  oms <- dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),))
+  oms <- dredge(fm01,rank="AICc")
    save(file=arch,list=c(lst,"oms"))
 }
 sw(oms)
@@ -183,10 +183,11 @@ sw(oms)
 
 Coeficients with 95% CI
 ```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
+  mavg <- model.avg(oms, subset = delta < 10)
+  #summary(mavg)
+  cbind( coef(mavg),confint(mavg))
 ```
+
 
 
 ### D. kappleri
@@ -197,7 +198,7 @@ Most support for p(sfrz)+lam(evi.mu) but no significant conditional coefficients
 arch <- sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir)
 lst <- (load(arch))
 if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+  oms <- dredge(fm01,rank="AICc")
    save(file=arch,list=c(lst,"oms"))
 }
 sw(oms)
@@ -210,7 +211,6 @@ mavg <- model.avg(oms, subset = delta < 10)
 #summary(mavg)
 cbind( coef(mavg),confint(mavg))
 ```
-
 
 ### C. alector
 
@@ -220,7 +220,7 @@ Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional 
 arch <- sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir)
 lst <- (load(arch))
 if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
+  oms <- dredge(fm01,rank="AICc")
    save(file=arch,list=c(lst,"oms"))
 }
 sw(oms)
@@ -233,6 +233,39 @@ mavg <- model.avg(oms, subset = delta < 10)
 #summary(mavg)
 cbind( coef(mavg),confint(mavg))
 ```
+
+
+
+### L. pardalis
+
+Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional coeficients for those parameters. Strong negative significative effect of conucos.
+
+```{r }
+arch <- sprintf("%s/Rdata/occuRN/L.pardalis.rda",script.dir)
+lst <- (load(arch))
+if (!"oms" %in% lst) {
+   oms <- dredge(fm01,rank="AICc")
+   save(file=arch,list=c(lst,"oms"))
+}
+sw(oms)
+
+```
+
+Coeficients with 95% CI
+```{r }
+mavg <- model.avg(oms, subset = delta < 10)
+#summary(mavg)
+cbind( coef(mavg),confint(mavg))
+```
+
+
+
+
+
+
+
+
+
 
 
 
@@ -300,7 +333,7 @@ cbind( coef(mavg),confint(mavg))
 ```
 
 
-### E.barbara     
+### E.barbara
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/E.barbara.rda",script.dir)
 lst <- (load(arch))
@@ -321,7 +354,7 @@ cbind( coef(mavg),confint(mavg))
 
 
 
-### T.terrestris  
+### T.terrestris
 
 
 ```{r }
@@ -376,7 +409,7 @@ if (!"oms" %in% lst) {
 summary(model.avg(oms, subset = delta < 10))
 ```
 
-### N.nasua    
+### N.nasua
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/N.nasua.rda",script.dir)
@@ -388,7 +421,7 @@ if (!"oms" %in% lst) {
 summary(model.avg(oms, subset = delta < 10))
 ```
 
-### M.tridactyla    
+### M.tridactyla
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/M.tridactyla.rda",script.dir)
@@ -409,7 +442,7 @@ If c-hat >1, then we use QAICc
 arch <- sprintf("%s/Rdata/occuRN/P.onca.rda",script.dir)
 lst <- (load(arch))
 if (!"oms" %in% lst) {
-   oms <- dredge(fm01,rank="QAICc",chat=ts02$c.hat.est)
+   oms <- dredge(fm01,rank="QAICc",chat=ts03$c.hat.est)
    save(file=arch,list=c(lst,"oms"))
 }
 summary(model.avg(oms, subset = delta < 10))
