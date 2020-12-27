@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 #PBS -l select=1:ncpus=16:mem=32gb
-#PBS -l walltime=2:00:00
+#PBS -l walltime=4:00:00
 #PBS -N occu-models
 #PBS -k eod
 #PBS -j oe

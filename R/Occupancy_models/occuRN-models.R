@@ -173,10 +173,19 @@ obsCovs=list(date=obsDate[ss,],sfrz=sfrz[ss,]/21))
 mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
 fm01 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+dcon, UMF,K=50)
 fm03 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+I(buf.fragmen^2)+dcon, UMF,K=50)
-save(file=mi.rda,UMF,fm01,fm03)
+
+
+save(file=mi.rda,UMF,fm01,fm03,oms)
 
 ts03 <- mb.gof.test(fm03,nsim=nsim.val,maxK=50,parallel = TRUE)
 save(file=mi.rda,UMF,fm01,fm03,ts03)
+
+oms <- switch(mi.spp,
+  C.paca=dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),)),
+  P.onca= dredge(fm01,rank="QAICc",chat=ts03$c.hat.est),
+  dredge(fm01,rank="AICc")
+  )
+save(file=mi.rda,UMF,fm01,fm03,ts03,oms)
 
 fm11 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+wcon, UMF,K=50)
 fm13 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+I(buf.fragmen^2)+wcon, UMF,K=50)
@@ -189,6 +198,7 @@ fm33 <- occuRN(~ dras+sfrz+date ~ ndvi.mu+I(ndvi.mu^2)+dcon, UMF,K=50)
 ts33 <- mb.gof.test(fm33,nsim=nsim.val,maxK=50,parallel = TRUE)
 
 save(file=mi.rda,UMF,fm01,fm03,ts03,fm11,fm13,ts13,fm31,fm33,ts33)
+
 
 # mi.rda <- sprintf("%s/Rdata/occu/%s.rda",script.dir,mi.spp)
 # if (!file.exists(mi.rda)) {
