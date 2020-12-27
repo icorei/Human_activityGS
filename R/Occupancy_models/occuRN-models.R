@@ -175,7 +175,7 @@ fm01 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+dcon, UMF,K=50)
 fm03 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+I(buf.fragmen^2)+dcon, UMF,K=50)
 
 
-save(file=mi.rda,UMF,fm01,fm03,oms)
+save(file=mi.rda,UMF,fm01,fm03)
 
 ts03 <- mb.gof.test(fm03,nsim=nsim.val,maxK=50,parallel = TRUE)
 save(file=mi.rda,UMF,fm01,fm03,ts03)
