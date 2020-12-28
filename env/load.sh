@@ -10,6 +10,7 @@ roraima)
   export GISDATA=$HOME/gisdata
   export GISDB=$HOME/gisdb
   export GISOUT=$HOME/gisout
+  export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc
   ;;
 katana1)
   export GISDATA=/srv/scratch/$(whoami)/gisdata

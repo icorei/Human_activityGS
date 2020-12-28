@@ -36,13 +36,26 @@ load(GIS.data)
 ## Model definition
 
 ## Covariates of probability of detection
+
+dras: distance to animal tracks and trails
+
+sfrz: sampling effort (nr. of days camera was active)
+
+date: date of sampling
+
 ## Covariates of probability of occupancy - frecuency of use
 
-For the location of each camera, we downloaded the time series of  Terra Moderate Resolution Imaging Spectroradiometer (MODIS) Vegetation Indices (MOD13Q1) Version 6 with a temporal resolution of 16 days and a spatial resolution of 250 meter (Data source: https://lpdaac.usgs.gov/products/mod13q1v006/).
+buf.fragmen: 1 km buffer of forest cover derived from LandSat time series (Hansen et al. 2013)
+
+dcon: distance to nearest conuco
+<!-- For the location of each camera, we downloaded the time series of  Terra Moderate Resolution Imaging Spectroradiometer (MODIS) Vegetation Indices (MOD13Q1) Version 6 with a temporal resolution of 16 days and a spatial resolution of 250 meter (Data source: https://lpdaac.usgs.gov/products/mod13q1v006/).
 
 We used the Normalized Difference Vegetation Index (NDVI) measurements from 2010 to 2019. The time series have n=215 total measurements per camera, but we considered only those with good reliability and production quality of the observations (see product user manual in https://lpdaac.usgs.gov/documents/103/MOD13_User_Guide_V6.pdf).
 
 ## Habitat classification
+
+-->
+
 
 
 
@@ -66,31 +79,36 @@ large.SE=min(max(SE(fm01)),max(SE(fm01)))))
 tbl %>% mutate(overdispersion=c.hat.est > 1 & c.hat.est <4, coef.problems=large.coefs>4 | large.SE>4) %>%
   mutate(lack.of.fit=p.value<.10 | p.value > .9 | c.hat.est > 4 | c.hat.est <0.30 ) -> tbl
 
-  table(tbl$lack.of.fit,tbl$coef.problems)
+```
+
+Symptoms of lack of fit for most species: Five models with extreme p-value or c-hat values, 18 models with large coeficients or standard errors.
+
+```{r }
+table(tbl$lack.of.fit,tbl$coef.problems)
 
 ```
 
 These species show one or more signs of lack of fit, probably due to the low number of detections:
 
 ```{r }
-tbl %>% filter(lack.of.fit)
+tbl %>% filter(lack.of.fit) %>% select(1:7)
 
 ```
 
 These species appear to have  a good fit but might have problems with large coeficients and standard errors
 ```{r }
-tbl %>% filter(!lack.of.fit & coef.problems) %>% arrange(c.hat.est)
+tbl %>% filter(!lack.of.fit & coef.problems) %>% arrange(c.hat.est) %>% select(1:7)
 ```
 
 For this species, the over-dispersion might be accounted for by using quasi-AICc
 ```{r }
-tbl %>% filter(!lack.of.fit & !coef.problems & overdispersion) %>% arrange(c.hat.est)
+tbl %>% filter(!lack.of.fit & !coef.problems & overdispersion) %>% arrange(c.hat.est) %>% select(1:7)
 ```
 
 These species seem to have  a good fit and no signs of over-dispersion:
 
 ```{r }
-tbl %>% filter(!lack.of.fit & !coef.problems & !overdispersion) %>% arrange(c.hat.est)
+tbl %>% filter(!lack.of.fit & !coef.problems & !overdispersion) %>% arrange(c.hat.est) %>% select(1:7)
 
 ```
 
@@ -99,8 +117,7 @@ tbl %>% filter(!lack.of.fit & !coef.problems & !overdispersion) %>% arrange(c.ha
 
 ### L. rufaxilla
 
-
-Sum of AICc weights indicate a clear effect of p(sfrz) and large support for lam(evi.mu). wcon has AICcw=0.29
+Sum of AICc weights indicate a clear effect of p(sfrz) and large support for lam(buf.fragmen). Almost half of the models support lam(dcon)
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir)
@@ -124,6 +141,9 @@ cbind( coef(mavg),confint(mavg))
 
 
 ### C. paca
+
+
+Sum of AICc weights indicate a clear effect of p(sfrz) p(dras) and lam(dcon)
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir)

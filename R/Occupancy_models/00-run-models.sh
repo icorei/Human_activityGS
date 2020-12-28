@@ -4,9 +4,12 @@ ls -lah $SCRIPTDIR/Rdata
 
 nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/occuRN-models.R &
 
+source ~/proyectos/IVIC/Hunting_in_GS/env/load.sh
+cd $WORKDIR
 
-
+R --vanilla
 require(knitr)
+script.dir <- Sys.getenv("SCRIPTDIR")
 mi.arch <- sprintf("%s/R/Occupancy_models/unmarked-models.Rmd",script.dir)
 rmarkdown::render(mi.arch,"all")
 
