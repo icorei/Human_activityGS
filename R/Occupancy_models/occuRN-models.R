@@ -23,70 +23,6 @@ GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
 load(GIS.data)
 
 
-
-## Distance to rastros
-
-drastros <- pointDistance(subset(eventos,camara %in% "RAS")[,c("long","lat")], camaras[,c("lon","lat")], lonlat=TRUE)
-
-# IDW
-# g(u) = (sum of w[i] )
-# where the weights are the inverse p-th powers of distance,
-# w[i] = 1/d(u,x[i])^p
-# where d(u,x[i]) is the Euclidean distance from u to x[i].
-
-p <- 0.25
-w <- 1/((drastros)^p)
-idw.rastros <- apply(w,2,sum)
-#idw.conucos <- (idw.conucos - mean(idw.conucos)) / sd(idw.conucos)
-hist(idw.rastros)
-
-
-## Distance to conucos
-
-dconucos <- pointDistance(coordinates(conucos)[,1:2], camaras[,c("lon","lat")], lonlat=TRUE)
-
-
-#distance to nearest
-min.conucos <- apply(dconucos,2,min)/max(dconucos)/9000
-
-# IDW
-# g(u) = (sum of w[i] )
-# where the weights are the inverse p-th powers of distance,
-# w[i] = 1/d(u,x[i])^p
-# where d(u,x[i]) is the Euclidean distance from u to x[i].
-
-p <- 0.25
-w <- 1/((dconucos)^p)
-idw.conucos <- apply(w,2,sum)
-##idw.conucos <- (idw.conucos - mean(idw.conucos)) / sd(idw.conucos)
-hist(idw.conucos)
-
-camaras$wcon <- idw.conucos
-camaras$dcon <- min.conucos
-camaras$dras <- idw.rastros
-boxplot(extract(vbsq,conucos)~conucos@data$short_name)
-
-table(as.vector(substring(viq.camara,15,16)))
-
-qry <- ndvi.camara
-qry[!substring(viq.camara,15,16)%in% "00"] <- NA
-
-hdvi <- pam(dist(qry),k=3)
-table(hdvi$clustering)
-hdvi$silinfo$avg.width
-
-camaras$ndvi.mu <- apply(qry,1,mean,na.rm=T)
-camaras$ndvi.sg <- apply(qry,1,sd,na.rm=T)
-
-camaras$grp <- factor(hdvi$clustering,labels=c("savanna","shrub","forest"))
-
-camaras$bsq <- extract(vbsq,camaras[,c("lon","lat")])
-camaras$dcom <- extract(dist.comunidades,camaras[,c("lon","lat")])
-
-boxplot(camaras$ndvi.mu~camaras$grp)
-
-boxplot(camaras$buf.fragmen~camaras$grp)
-
 cor.test(camaras$buf.fragmen,idw.conucos)
 cor.test(camaras$ndvi.mu,idw.conucos)
 
@@ -180,24 +116,25 @@ save(file=mi.rda,UMF,fm01,fm03)
 ts03 <- mb.gof.test(fm03,nsim=nsim.val,maxK=50,parallel = TRUE)
 save(file=mi.rda,UMF,fm01,fm03,ts03)
 
-oms <- switch(mi.spp,
-  C.paca=dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),)),
-  P.onca= dredge(fm01,rank="QAICc",chat=ts03$c.hat.est),
-  dredge(fm01,rank="AICc")
-  )
-save(file=mi.rda,UMF,fm01,fm03,ts03,oms)
+oms <- ifelse(ts03$c.hat.est>1,dredge(fm01,rank="QAICc",chat=ts03$c.hat.est),dredge(fm01,rank="AICc"))
+oms03 <- ifelse(ts03$c.hat.est>1,
+  dredge(fm03,rank="QAICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),),chat=ts03$c.hat.est),
+  dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),)))
+
+
+save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03)
 
 fm11 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+wcon, UMF,K=50)
 fm13 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+I(buf.fragmen^2)+wcon, UMF,K=50)
 ts13 <- mb.gof.test(fm13,nsim=nsim.val,maxK=50,parallel = TRUE)
-save(file=mi.rda,UMF,fm01,fm03,ts03,fm11,fm13,ts13)
+save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03,fm11,fm13,ts13)
 
 
 fm31 <- occuRN(~ dras+sfrz+date ~ ndvi.mu+dcon, UMF,K=50)
 fm33 <- occuRN(~ dras+sfrz+date ~ ndvi.mu+I(ndvi.mu^2)+dcon, UMF,K=50)
 ts33 <- mb.gof.test(fm33,nsim=nsim.val,maxK=50,parallel = TRUE)
 
-save(file=mi.rda,UMF,fm01,fm03,ts03,fm11,fm13,ts13,fm31,fm33,ts33)
+save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03,fm11,fm13,ts13,fm31,fm33,ts33)
 
 
 # mi.rda <- sprintf("%s/Rdata/occu/%s.rda",script.dir,mi.spp)
