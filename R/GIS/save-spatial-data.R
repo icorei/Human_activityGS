@@ -8,7 +8,7 @@ require(raster)
 #require(fractaldim)
 #require(SDMTools)
 require(chron)
-
+require(cluster)
 ## ubicación de la carpeta de trabajo y el repositorio local
 
 if (Sys.getenv("WORKDIR") == "") {
