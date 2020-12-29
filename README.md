@@ -40,7 +40,8 @@ source $HOME/proyectos/IVIC/Hunting_in_GS/env/load.sh
 
 cd $WORKDIR
 qsub -J 1-2 $SCRIPTDIR/pbs/run-occu-models.pbs
-qsub -J 3-28 $SCRIPTDIR/pbs/run-occu-models.pbs
+qsub -J 3-29 $SCRIPTDIR/pbs/run-occu-models.pbs
+qsub -J 22-23 $SCRIPTDIR/pbs/run-occu-models.pbs
 qstat -tu $(whoami)
 
 qsub -I -l select=1:ncpus=2:mem=8gb,walltime=4:00:00

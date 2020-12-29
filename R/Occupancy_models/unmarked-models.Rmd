@@ -122,10 +122,6 @@ Sum of AICc weights indicate a clear effect of p(sfrz) and large support for lam
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),))
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 ```
 
@@ -148,10 +144,6 @@ Sum of AICc weights indicate a clear effect of p(sfrz) p(dras) and lam(dcon)
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-  oms <- dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),))
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -169,11 +161,6 @@ Used linear model for EVI. Most support for p(sfrz)+lam(evi.mu), significant con
 arch <- sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir)
 
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-##  oms <- dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),))
-  oms <- dredge(fm01,rank="AICc")
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -193,10 +180,6 @@ Used linear model for EVI. Most support for p(sfrz)+lam(evi.mu), significant con
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/C.thous.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm01,rank="AICc")
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -217,10 +200,6 @@ Most support for p(sfrz)+lam(evi.mu) but no significant conditional coefficients
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-  oms <- dredge(fm01,rank="AICc")
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -239,10 +218,6 @@ Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-  oms <- dredge(fm01,rank="AICc")
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -263,10 +238,6 @@ Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/L.pardalis.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm01,rank="AICc")
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -294,10 +265,6 @@ cbind( coef(mavg),confint(mavg))
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/D.novemcinctus.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -315,10 +282,6 @@ cbind( coef(mavg),confint(mavg))
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/M.americana.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm01,rank="AICc")
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -337,10 +300,6 @@ Null model is best model
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/T.tetradactyla.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -357,10 +316,6 @@ cbind( coef(mavg),confint(mavg))
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/E.barbara.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -380,10 +335,6 @@ cbind( coef(mavg),confint(mavg))
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/T.terrestris.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -401,10 +352,6 @@ cbind( coef(mavg),confint(mavg))
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/D.imperfecta.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
-   save(file=arch,list=c(lst,"oms"))
-}
 sw(oms)
 
 ```
@@ -422,10 +369,6 @@ cbind( coef(mavg),confint(mavg))
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/M.gouazoubira.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
-   save(file=arch,list=c(lst,"oms"))
-}
 summary(model.avg(oms, subset = delta < 10))
 ```
 
@@ -434,10 +377,6 @@ summary(model.avg(oms, subset = delta < 10))
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/N.nasua.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
-   save(file=arch,list=c(lst,"oms"))
-}
 summary(model.avg(oms, subset = delta < 10))
 ```
 
@@ -446,10 +385,6 @@ summary(model.avg(oms, subset = delta < 10))
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/M.tridactyla.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm03,rank="AICc",subset=dc(lam(evi.mu),lam(I(evi.mu^2)),))
-   save(file=arch,list=c(lst,"oms"))
-}
 summary(model.avg(oms, subset = delta < 10))
 ```
 
@@ -461,10 +396,6 @@ If c-hat >1, then we use QAICc
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/P.onca.rda",script.dir)
 lst <- (load(arch))
-if (!"oms" %in% lst) {
-   oms <- dredge(fm01,rank="QAICc",chat=ts03$c.hat.est)
-   save(file=arch,list=c(lst,"oms"))
-}
 summary(model.avg(oms, subset = delta < 10))
 
 ```

@@ -116,10 +116,14 @@ save(file=mi.rda,UMF,fm01,fm03)
 ts03 <- mb.gof.test(fm03,nsim=nsim.val,maxK=50,parallel = TRUE)
 save(file=mi.rda,UMF,fm01,fm03,ts03)
 
-oms <- ifelse(ts03$c.hat.est>1,dredge(fm01,rank="QAICc",chat=ts03$c.hat.est),dredge(fm01,rank="AICc"))
-oms03 <- ifelse(ts03$c.hat.est>1,
-  dredge(fm03,rank="QAICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),),chat=ts03$c.hat.est),
-  dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),)))
+if (ts03$c.hat.est>1) {
+  oms <- dredge(fm01,rank="QAICc",chat=ts03$c.hat.est)
+  oms03 <- dredge(fm03,rank="QAICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),),chat=ts03$c.hat.est)
+} else {
+  oms <- dredge(fm01,rank="AICc")
+  oms03 <- dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),))
+}
+
 
 
 save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03)
@@ -127,14 +131,32 @@ save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03)
 fm11 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+wcon, UMF,K=50)
 fm13 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+I(buf.fragmen^2)+wcon, UMF,K=50)
 ts13 <- mb.gof.test(fm13,nsim=nsim.val,maxK=50,parallel = TRUE)
-save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03,fm11,fm13,ts13)
+
+if (ts13$c.hat.est>1) {
+  oms11 <- dredge(fm11,rank="QAICc",chat=ts13$c.hat.est)
+  oms13 <- dredge(fm13,rank="QAICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),),chat=ts13$c.hat.est)
+} else {
+  oms11 <- dredge(fm11,rank="AICc")
+  oms13 <- dredge(fm13,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),))
+}
+
+save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03,fm11,fm13,ts13,oms11,oms13)
 
 
 fm31 <- occuRN(~ dras+sfrz+date ~ ndvi.mu+dcon, UMF,K=50)
 fm33 <- occuRN(~ dras+sfrz+date ~ ndvi.mu+I(ndvi.mu^2)+dcon, UMF,K=50)
 ts33 <- mb.gof.test(fm33,nsim=nsim.val,maxK=50,parallel = TRUE)
 
-save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03,fm11,fm13,ts13,fm31,fm33,ts33)
+
+if (ts33$c.hat.est>1) {
+  oms31 <- dredge(fm31,rank="QAICc",chat=ts33$c.hat.est)
+  oms33 <- dredge(fm33,rank="QAICc",subset=dc(lam(ndvi.mu),lam(I(ndvi.mu^2)),),chat=ts33$c.hat.est)
+} else {
+  oms31 <- dredge(fm31,rank="AICc")
+  oms33 <- dredge(fm33,rank="AICc",subset=dc(lam(ndvi.mu),lam(I(ndvi.mu^2)),))
+}
+
+save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03,fm11,fm13,ts13,oms11,oms13,fm31,fm33,ts33,oms31,oms33)
 
 
 # mi.rda <- sprintf("%s/Rdata/occu/%s.rda",script.dir,mi.spp)
