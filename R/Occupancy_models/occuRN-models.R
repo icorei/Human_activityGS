@@ -23,8 +23,8 @@ GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
 load(GIS.data)
 
 
-cor.test(camaras$buf.fragmen,idw.conucos)
-cor.test(camaras$ndvi.mu,idw.conucos)
+#cor.test(camaras$buf.fragmen,idw.conucos)
+#cor.test(camaras$ndvi.mu,idw.conucos)
 
 eventos <- subset(eventos,bloque %in% sprintf("B%02d",1:6) & !(camara %in% c("RAS","",NA)))
 camaras <- subset(camaras,bloque %in% sprintf("B%02d",1:6) )
