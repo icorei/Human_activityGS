@@ -117,13 +117,15 @@ ts03 <- mb.gof.test(fm03,nsim=nsim.val,maxK=50,parallel = TRUE)
 save(file=mi.rda,UMF,fm01,fm03,ts03)
 
 if (ts03$c.hat.est>1) {
-  oms <- dredge(fm01,rank="QAICc",chat=ts03$c.hat.est)
+  oms01 <- dredge(fm01,rank="QAICc",chat=ts03$c.hat.est)
   oms03 <- dredge(fm03,rank="QAICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),),chat=ts03$c.hat.est)
 } else {
-  oms <- dredge(fm01,rank="AICc")
+  oms01 <- dredge(fm01,rank="AICc")
   oms03 <- dredge(fm03,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),))
 }
 
+mavg01 <- model.avg(oms01, subset = delta < 10,fit=T)
+mavg03 <- model.avg(oms03, subset = delta < 10,fit=T)
 
 
 save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03)
@@ -139,6 +141,9 @@ if (ts13$c.hat.est>1) {
   oms11 <- dredge(fm11,rank="AICc")
   oms13 <- dredge(fm13,rank="AICc",subset=dc(lam(buf.fragmen),lam(I(buf.fragmen^2)),))
 }
+
+mavg11 <- model.avg(oms11, subset = delta < 10,fit=T)
+mavg13 <- model.avg(oms13, subset = delta < 10,fit=T)
 
 save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03,fm11,fm13,ts13,oms11,oms13)
 
@@ -156,9 +161,16 @@ if (ts33$c.hat.est>1) {
   oms33 <- dredge(fm33,rank="AICc",subset=dc(lam(ndvi.mu),lam(I(ndvi.mu^2)),))
 }
 
+mavg31 <- model.avg(oms31, subset = delta < 10,fit=T)
+mavg33 <- model.avg(oms33, subset = delta < 10,fit=T)
+
 save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03,fm11,fm13,ts13,oms11,oms13,fm31,fm33,ts33,oms31,oms33)
 
+for (k in c("UMF","fm01","fm03","ts03","oms01","oms03","fm11","fm13","ts13","oms11","oms13","fm31","fm33","ts33","oms31","oms33","mavg01","mavg03","mavg11","mavg13","mavg31","mavg33")) {
+  assign(sprintf("%s.%s",k,mi.spp),get(k))
+}
 
+save(file=mi.rda,list=ls(pattern=mi.spp))
 # mi.rda <- sprintf("%s/Rdata/occu/%s.rda",script.dir,mi.spp)
 # if (!file.exists(mi.rda)) {
 #  fm00 <- occu(~ sfrz+dcom+date ~ H+bsq, UMF,linkPsi= "cloglog")

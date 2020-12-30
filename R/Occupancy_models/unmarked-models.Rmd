@@ -115,25 +115,51 @@ tbl %>% filter(!lack.of.fit & !coef.problems & !overdispersion) %>% arrange(c.ha
 
 ## Model averaging
 
-### L. rufaxilla
-
-Sum of AICc weights indicate a clear effect of p(sfrz) and large support for lam(buf.fragmen). Almost half of the models support lam(dcon)
+### Variable importance
 
 ```{r }
-arch <- sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
+ccs <- data.frame()
+for (spp in c('D.leporina','L.pardalis','C.alector','C.thous','P.onca','D.novemcinctus','M.gouazoubira','D.kappleri','C.paca','L.rufaxilla')) {
+  arch <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,spp)
+  lst <- (load(arch))
+  print(spp)
+  if (spp %in% c('C.paca','L.pardalis','D.novemcinctus','L.rufaxilla')) {
+    print(sw(oms03))
+  } else {
+    print(sw(oms))
+  }
+  mavg <- model.avg(oms, subset = delta < 10)
+  ccs <- rbind(ccs,data.frame(spp, coef(mavg,full=F),confint(mavg,full=F)))
+}
+
 ```
 
-Significant conditional coeficients for p(sfrz). Negative relationship with distance to conuco ("atracted") but non-significant effect of conucos
+```{r}
+ccs  %>% filter(grepl('buf.fragmen',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full...F.) -> ss
 
-```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
-
-
+plot(ss$coef.mavg.,1:nrow(ss),xlim=c(-2.3,2.3),pch=19,xlab='',ylab='',axes=F,main='buf.fragmen')
+segments(ss$X2.5..,   1:nrow(ss),   ss$X97.5..,1:nrow(ss))
+axis(1)
+axis(2,1:nrow(ss),ss$spp,las=2)
+box()
+abline(v=0,lty=2,lwd=2,col=2)
 ```
+
+
+
+```{r}
+ccs  %>% filter(grepl('dcon',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full...F.) -> ss
+
+plot(ss$coef.mavg.,1:nrow(ss),xlim=c(-2.3,2.3),pch=19,xlab='',ylab='',axes=F,main='distance to conuco')
+segments(ss$X2.5..,   1:nrow(ss),   ss$X97.5..,1:nrow(ss))
+axis(1)
+axis(2,1:nrow(ss),ss$spp,las=2)
+box()
+abline(v=0,lty=2,lwd=2,col=2)
+```
+
+## results per species
+
 
 
 ### C. paca
@@ -143,15 +169,30 @@ Sum of AICc weights indicate a clear effect of p(sfrz) p(dras) and lam(dcon)
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
+load(arch)
+mavg <- model.avg(oms03, subset = delta < 10,fit=T)
+summary(mavg)
+
 
 ```
 
 Significant conditional coeficients for those parameters. Negative relationship with distance to conuco ("atracted") of conucos
 
-```{r }
-summary(model.avg(oms, subset = delta < 10))
+```{r}
+
+prd <- predict(mavg,type='state')
+x <- UMF@siteCovs$caza.celda>0
+a1 <- prd$fit
+lm01 <- glm(x ~ dcon,data=UMF@siteCovs,family=binomial)
+lm02 <- glm(x ~ a1,data=UMF@siteCovs,family=binomial)
+
+summary(avgmod.95p)
+aggregate(prd$fit,list(UMF@siteCovs$bloque),sum)
+ aggregate(prd$fit,list(UMF@siteCovs$caza.celda),mean)
+boxplot(prd$fit~UMF@siteCovs$caza.celda,varwidth=T)
+
+aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$bloque),sum)
+aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$caza.celda),sum)
 ```
 
 ### D. leporina
@@ -159,18 +200,37 @@ Used linear model for EVI. Most support for p(sfrz)+lam(evi.mu), significant con
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir)
-
-lst <- (load(arch))
-sw(oms)
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
 
 ```
 
-Coeficients with 95% CI
+
+### C. alector
+
+Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional coeficients for those parameters. Strong negative significative effect of conucos.
+
 ```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
+arch <- sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir)
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
+
 ```
+
+
+### L. rufaxilla
+
+Sum of AICc weights indicate a clear effect of p(sfrz) and large support for lam(buf.fragmen). Almost half of the models support lam(dcon)
+
+```{r }
+arch <- sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir)
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
+
+```
+
+Significant conditional coeficients for p(sfrz). Negative relationship with distance to conuco ("atracted") but non-significant effect of conucos
+
 
 
 ### C.thous
@@ -179,17 +239,12 @@ Used linear model for EVI. Most support for p(sfrz)+lam(evi.mu), significant con
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/C.thous.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
 
 ```
 
-Coeficients with 95% CI
-```{r }
-  mavg <- model.avg(oms, subset = delta < 10)
-  #summary(mavg)
-  cbind( coef(mavg),confint(mavg))
-```
+
 
 
 
@@ -199,36 +254,10 @@ Most support for p(sfrz)+lam(evi.mu) but no significant conditional coefficients
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
 
 ```
-
-Coeficients with 95% CI
-```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
-```
-
-### C. alector
-
-Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional coeficients for those parameters. Strong negative significative effect of conucos.
-
-```{r }
-arch <- sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
-
-```
-
-Coeficients with 95% CI
-```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
-```
-
 
 
 ### L. pardalis
@@ -237,16 +266,9 @@ Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional 
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/L.pardalis.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
 
-```
-
-Coeficients with 95% CI
-```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
 ```
 
 
@@ -264,16 +286,9 @@ cbind( coef(mavg),confint(mavg))
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/D.novemcinctus.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
 
-```
-
-Coeficients with 95% CI
-```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
 ```
 
 
@@ -281,16 +296,9 @@ cbind( coef(mavg),confint(mavg))
  Best model is p(date)   p(sfrz) lam(evi.mu) but very large coeficients for p(Int) and p(sfrz)
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/M.americana.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
 
-```
-
-Coeficients with 95% CI
-```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
 ```
 
 
@@ -299,32 +307,17 @@ cbind( coef(mavg),confint(mavg))
 Null model is best model
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/T.tetradactyla.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
 
-```
-
-Coeficients with 95% CI
-```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
 ```
 
 
 ### E.barbara
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/E.barbara.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
-
-```
-
-Coeficients with 95% CI
-```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
 ```
 
 
@@ -334,16 +327,8 @@ cbind( coef(mavg),confint(mavg))
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/T.terrestris.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
-
-```
-
-Coeficients with 95% CI
-```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
 ```
 
 
@@ -351,16 +336,8 @@ cbind( coef(mavg),confint(mavg))
 
 ```{r }
 arch <- sprintf("%s/Rdata/occuRN/D.imperfecta.rda",script.dir)
-lst <- (load(arch))
-sw(oms)
-
-```
-
-Coeficients with 95% CI
-```{r }
-mavg <- model.avg(oms, subset = delta < 10)
-#summary(mavg)
-cbind( coef(mavg),confint(mavg))
+load(arch)
+summary(model.avg(oms, subset = delta < 10))
 ```
 
 
@@ -397,30 +374,4 @@ If c-hat >1, then we use QAICc
 arch <- sprintf("%s/Rdata/occuRN/P.onca.rda",script.dir)
 lst <- (load(arch))
 summary(model.avg(oms, subset = delta < 10))
-
 ```
-
-Sum of QAICc-weights
-```{r }
-sw(oms)
-```
-
-
-
-<!--
-avgmod.95p <- model.avg(oms, cumsum(weight) <= .95,fit=T)
-prd <- predict(avgmod.95p,type='state')
-
-
-
-summary(avgmod.95p)
-aggregate(prd$fit,list(UMF@siteCovs$bloque),sum)
- aggregate(prd$fit,list(UMF@siteCovs$caza.celda),mean)
-boxplot(prd$fit~UMF@siteCovs$caza.celda,varwidth=T)
-
-
-
-
-
-aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$bloque),sum)
-aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$caza.celda),sum) -->
