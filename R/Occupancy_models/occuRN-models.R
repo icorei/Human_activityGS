@@ -128,7 +128,7 @@ mavg01 <- model.avg(oms01, subset = delta < 10,fit=T)
 mavg03 <- model.avg(oms03, subset = delta < 10,fit=T)
 
 
-save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03)
+save(file=mi.rda,UMF,fm01,fm03,ts03,oms01,oms03)
 
 fm11 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+wcon, UMF,K=50)
 fm13 <- occuRN(~ dras+sfrz+date ~ buf.fragmen+I(buf.fragmen^2)+wcon, UMF,K=50)
@@ -145,7 +145,7 @@ if (ts13$c.hat.est>1) {
 mavg11 <- model.avg(oms11, subset = delta < 10,fit=T)
 mavg13 <- model.avg(oms13, subset = delta < 10,fit=T)
 
-save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03,fm11,fm13,ts13,oms11,oms13)
+save(file=mi.rda,UMF,fm01,fm03,ts03,oms01,oms03,fm11,fm13,ts13,oms11,oms13)
 
 
 fm31 <- occuRN(~ dras+sfrz+date ~ ndvi.mu+dcon, UMF,K=50)
@@ -164,7 +164,7 @@ if (ts33$c.hat.est>1) {
 mavg31 <- model.avg(oms31, subset = delta < 10,fit=T)
 mavg33 <- model.avg(oms33, subset = delta < 10,fit=T)
 
-save(file=mi.rda,UMF,fm01,fm03,ts03,oms,oms03,fm11,fm13,ts13,oms11,oms13,fm31,fm33,ts33,oms31,oms33)
+save(file=mi.rda,UMF,fm01,fm03,ts03,oms01,oms03,fm11,fm13,ts13,oms11,oms13,fm31,fm33,ts33,oms31,oms33)
 
 for (k in c("UMF","fm01","fm03","ts03","oms01","oms03","fm11","fm13","ts13","oms11","oms13","fm31","fm33","ts33","oms31","oms33","mavg01","mavg03","mavg11","mavg13","mavg31","mavg33")) {
   assign(sprintf("%s.%s",k,mi.spp),get(k))
