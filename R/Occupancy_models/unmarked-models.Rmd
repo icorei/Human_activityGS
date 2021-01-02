@@ -13,6 +13,7 @@ require(raster)
 require(cluster)
 require(MuMIn)
 require(dplyr)
+require(ggplot2)
 
 
 if (Sys.getenv("WORKDIR") == "") {
@@ -56,7 +57,43 @@ We used the Normalized Difference Vegetation Index (NDVI) measurements from 2010
 
 -->
 
+```r
 
+dconucos <- pointDistance(coordinates(conucos)[,1:2], camaras[,c("lon","lat")], lonlat=TRUE)
+
+#distance to nearest
+camaras$min.conucos <- apply(dconucos,2,min)
+
+ggplot(subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=factor(caza.celda), y=min.conucos)) +
+    geom_boxplot()
+
+    ggplot(subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=factor(caza.celda), y=dcom)) +
+        geom_boxplot()
+# dev.flush()
+subset(camaras,bloque %in% sprintf("B%02s",1:6) & min.conucos>7000)
+
+ggplot(subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=factor(caza.celda), y=dcom)) +
+    geom_hist()
+
+
+    ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=buf.fragmen,fill=bloque)) + geom_histogram(binwidth=5, alpha = .8,col='black') +
+   labs(title="Histogram for forest cover") +
+   labs(x="Percentage cover", y="Count")
+
+   ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=buf.fragmen,fill=as.factor(caza.celda))) + geom_histogram(binwidth=5, alpha = .8,col='black') +
+  labs(title="Histogram for forest cover") +
+  labs(x="Percentage cover", y="Count")
+
+  ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=min.conucos,fill=as.factor(caza.celda))) + geom_histogram(binwidth=500, alpha = .8,col='black') +
+ labs(title="Histogram for distance to conucos") +
+ labs(x="Distance (m)", y="Count")
+   
+    ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(min.conucos)) +
+      geom_histogram(binwidth=500, col="red", fill="green", alpha = .2) +
+     labs(title="Histogram for distance to conuco") +
+     labs(x="Distance (m)", y="Count")
+     ##+ xlim(c(18,52)) + ylim(c(0,30))
+```
 
 
 # Results
@@ -66,22 +103,31 @@ We used the Normalized Difference Vegetation Index (NDVI) measurements from 2010
 MacKenzie and Bailey Goodness-of-fit Test for  Royle-Nichols Occupancy Models.
 
 ```{r }
-tbl <- data.frame()
-for (arch in dir(sprintf("%s/Rdata/occuRN/",script.dir))) {
-   load(sprintf("%s/Rdata/occuRN/%s",script.dir,arch))
- tbl <- rbind(tbl,data.frame(spp=sub(".rda$","",arch),
- n.detect= sum(UMF@y,na.rm=T),
-ts03[c("chi.square","p.value","c.hat.est")],
-large.coefs=min(max(abs(coef(fm01))),max(abs(coef(fm01)))),
-large.SE=min(max(SE(fm01)),max(SE(fm01)))))
+if (!exists("tbl")) {
+  tbl <- data.frame()
+  for (arch in dir(sprintf("%s/Rdata/occuRN/",script.dir))) {
+    load(sprintf("%s/Rdata/occuRN/%s",script.dir,arch))
+  mi.spp <- sub(".rda$","",arch)
+  UMF <- get(sprintf("UMF.%s",mi.spp))
+  ts03 <- get(sprintf("ts03.%s",mi.spp))
+  fm01 <- get(sprintf("fm01.%s",mi.spp))
+  fm03 <- get(sprintf("fm03.%s",mi.spp))
+
+   tbl <- rbind(tbl,data.frame(spp=mi.spp,
+   n.detect= sum(UMF@y,na.rm=T),
+  ts03[c("chi.square","p.value","c.hat.est")],
+  large.coefs=min(max(abs(coef(fm01))),max(abs(coef(fm03)))),
+  large.SE=min(max(SE(fm01)),max(SE(fm03)))))
+
+  }
+  tbl %>% mutate(overdispersion=c.hat.est > 1 & c.hat.est <4, coef.problems=large.coefs>4 | large.SE>4) %>%
+    mutate(lack.of.fit=p.value<.10 | p.value > .9 | c.hat.est > 4 | c.hat.est <0.30 ) -> tbl
 
 }
-tbl %>% mutate(overdispersion=c.hat.est > 1 & c.hat.est <4, coef.problems=large.coefs>4 | large.SE>4) %>%
-  mutate(lack.of.fit=p.value<.10 | p.value > .9 | c.hat.est > 4 | c.hat.est <0.30 ) -> tbl
 
 ```
 
-Symptoms of lack of fit for most species: Five models with extreme p-value or c-hat values, 18 models with large coeficients or standard errors.
+Symptoms of lack of fit for most species: Six models with extreme p-value or c-hat values, 19 models with large coeficients or standard errors.
 
 ```{r }
 table(tbl$lack.of.fit,tbl$coef.problems)
@@ -120,15 +166,32 @@ tbl %>% filter(!lack.of.fit & !coef.problems & !overdispersion) %>% arrange(c.ha
 ```{r }
 ccs <- data.frame()
 for (spp in c('D.leporina','L.pardalis','C.alector','C.thous','P.onca','D.novemcinctus','M.gouazoubira','D.kappleri','C.paca','L.rufaxilla')) {
-  arch <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,spp)
-  lst <- (load(arch))
   print(spp)
   if (spp %in% c('C.paca','L.pardalis','D.novemcinctus','L.rufaxilla')) {
-    print(sw(oms03))
+    print(sw(get(sprintf("oms03.%s",spp))))
+    mavg <- model.avg(get(sprintf("oms03.%s",spp)), subset = delta < 10)
   } else {
-    print(sw(oms))
+    print(sw(get(sprintf("oms01.%s",spp))))
+    mavg <- model.avg(get(sprintf("oms01.%s",spp)), subset = delta < 10)
   }
-  mavg <- model.avg(oms, subset = delta < 10)
+  ccs <- rbind(ccs,data.frame(spp, coef(mavg,full=F),confint(mavg,full=F)))
+}
+
+```
+
+
+
+```{r eval=false}
+ccs <- data.frame()
+for (spp in c('D.leporina','L.pardalis','C.alector','C.thous','P.onca','D.novemcinctus','M.gouazoubira','D.kappleri','C.paca','L.rufaxilla')) {
+  print(spp)
+  if (spp %in% c('C.paca','L.pardalis','D.novemcinctus','L.rufaxilla')) {
+    print(sw(get(sprintf("oms13.%s",spp))))
+    mavg <- model.avg(get(sprintf("oms13.%s",spp)), subset = delta < 10)
+  } else {
+    print(sw(get(sprintf("oms11.%s",spp))))
+    mavg <- model.avg(get(sprintf("oms11.%s",spp)), subset = delta < 10)
+  }
   ccs <- rbind(ccs,data.frame(spp, coef(mavg,full=F),confint(mavg,full=F)))
 }
 
@@ -149,13 +212,40 @@ abline(v=0,lty=2,lwd=2,col=2)
 
 ```{r}
 ccs  %>% filter(grepl('dcon',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full...F.) -> ss
-
-plot(ss$coef.mavg.,1:nrow(ss),xlim=c(-2.3,2.3),pch=19,xlab='',ylab='',axes=F,main='distance to conuco')
+par(mar=c(4,8,3,1))
+plot(ss$coef.mavg.,1:nrow(ss),xlim=c(-2.3,2.3),pch=19,xlab=expression(hat(beta)),ylab='',axes=F,main='distance to conuco')
 segments(ss$X2.5..,   1:nrow(ss),   ss$X97.5..,1:nrow(ss))
 axis(1)
-axis(2,1:nrow(ss),ss$spp,las=2)
+axis(2,1:nrow(ss),ss$spp,las=2,font=3)
 box()
 abline(v=0,lty=2,lwd=2,col=2)
+```
+
+
+## Hunting
+
+
+```{r}
+
+mtz <- data.frame()
+
+for (k in c('C.alector', 'C.paca', 'D.leporina', 'M.gouazoubira', 'D.kappleri', 'D.novemcinctus', 'L.rufaxilla', 'L.pardalis','C.thous','P.onca')) {
+  if (k %in% c('C.paca','L.pardalis','D.novemcinctus','L.rufaxilla')) {
+      mtz <- rbind(mtz,data.frame(species=k,abundance=predict(get(sprintf("mavg03.%s",k)),type='state')$fit,caza=UMF@siteCovs$caza.celda))
+    } else {
+      mtz <- rbind(mtz,data.frame(species=k,abundance=predict(get(sprintf("mavg01.%s",k)),type='state')$fit,caza=UMF@siteCovs$caza.celda))
+    }
+}
+
+mtz$hunting <- ifelse(mtz$caza==1,'yes','no')
+mtz$hunting <- ifelse(mtz$caza>0,'yes','no')
+
+
+# grouped boxplot
+ggplot(mtz, aes(x=species, y=abundance, fill=hunting)) + ylab(expression(Sigma * hat(lambda))) +
+    geom_boxplot()
+
+
 ```
 
 ## results per species
@@ -168,40 +258,31 @@ abline(v=0,lty=2,lwd=2,col=2)
 Sum of AICc weights indicate a clear effect of p(sfrz) p(dras) and lam(dcon)
 
 ```{r }
-arch <- sprintf("%s/Rdata/occuRN/C.paca.rda",script.dir)
-load(arch)
-mavg <- model.avg(oms03, subset = delta < 10,fit=T)
-summary(mavg)
+summary(mavg03.C.paca)
 
 
 ```
 
 Significant conditional coeficients for those parameters. Negative relationship with distance to conuco ("atracted") of conucos
-
-```{r}
-
-prd <- predict(mavg,type='state')
-x <- UMF@siteCovs$caza.celda>0
-a1 <- prd$fit
-lm01 <- glm(x ~ dcon,data=UMF@siteCovs,family=binomial)
-lm02 <- glm(x ~ a1,data=UMF@siteCovs,family=binomial)
-
-summary(avgmod.95p)
-aggregate(prd$fit,list(UMF@siteCovs$bloque),sum)
- aggregate(prd$fit,list(UMF@siteCovs$caza.celda),mean)
-boxplot(prd$fit~UMF@siteCovs$caza.celda,varwidth=T)
-
-aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$bloque),sum)
-aggregate(confint(ranef(fm01,K=50), level=0.95),list(UMF@siteCovs$caza.celda),sum)
-```
+`
 
 ### D. leporina
 Used linear model for EVI. Most support for p(sfrz)+lam(evi.mu), significant conditional coefficients for those parameters. Weak negative ("avoids") non-significant effect of conucos
 
 ```{r }
-arch <- sprintf("%s/Rdata/occuRN/D.leporina.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
+summary(mavg01.D.leporina)
+
+
+```
+
+```{r }
+prd <- predict(mavg01.D.leporina,type='state')
+
+    dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,dcon=UMF@siteCovs$dcon)
+
+    ggplot(dtf, aes(x=dcon, y=prd,colour=factor(caza))) +
+      geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
+        geom_point() + xlab("distance to conucos") + ylab("Predicted values") + labs(colour='Hunting')
 
 ```
 
@@ -211,21 +292,28 @@ summary(model.avg(oms, subset = delta < 10))
 Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional coeficients for those parameters. Strong negative significative effect of conucos.
 
 ```{r }
-arch <- sprintf("%s/Rdata/occuRN/C.alector.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
+summary(mavg01.C.alector)
 
 ```
 
+
+```{r }
+prd <- predict(mavg01.C.alector,type='state')
+dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,dcon=UMF@siteCovs$dcon)
+
+
+    ggplot(dtf, aes(x=dcon, y=prd,colour=factor(caza))) +
+      geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
+        geom_point() + xlab("distance to conucos") + ylab("Predicted values") + labs(colour='Hunting')
+
+```
 
 ### L. rufaxilla
 
 Sum of AICc weights indicate a clear effect of p(sfrz) and large support for lam(buf.fragmen). Almost half of the models support lam(dcon)
 
 ```{r }
-arch <- sprintf("%s/Rdata/occuRN/L.rufaxilla.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
+summary(mavg03.L.rufaxilla)
 
 ```
 
@@ -233,17 +321,44 @@ Significant conditional coeficients for p(sfrz). Negative relationship with dist
 
 
 
+```{r }
+prd <- predict(mavg03.L.rufaxilla,type='state')
+dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,dcon=UMF@siteCovs$dcon,bsq=UMF@siteCovs$buf.fragmen)
+
+
+    ggplot(dtf, aes(x=dcon, y=prd,colour=factor(caza))) +
+      geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
+        geom_point() + xlab("distance to conucos") + ylab("Predicted values") + labs(colour='Hunting')
+
+        ggplot(dtf, aes(x=bsq, y=prd,colour=factor(caza))) +
+          geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
+            geom_point() + xlab("forest cover") + ylab("Predicted values") + labs(colour='Hunting')
+
+```
 ### C.thous
 
 Used linear model for EVI. Most support for p(sfrz)+lam(evi.mu), significant conditional coefficients for lam(evi.mu) (negative association). Weak negative ("avoids") non-significant effect of conucos
 
 ```{r }
-arch <- sprintf("%s/Rdata/occuRN/C.thous.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
+summary(mavg01.C.thous)
 
 ```
 
+
+```{r }
+prd <- predict(mavg01.C.thous,type='state')
+dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,dcon=UMF@siteCovs$dcon,bsq=UMF@siteCovs$buf.fragmen)
+
+
+ggplot(dtf, aes(x=dcon, y=prd,colour=factor(caza))) +
+  geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
+    geom_point() + xlab("distance to conucos") + ylab("Predicted values") + labs(colour='Hunting')
+
+    ggplot(dtf, aes(x=bsq, y=prd,colour=factor(caza))) +
+      geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
+        geom_point() + xlab("forest cover") + ylab("Predicted values") + labs(colour='Hunting')
+
+```
 
 
 
