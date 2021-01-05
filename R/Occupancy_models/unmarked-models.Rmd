@@ -49,50 +49,95 @@ date: date of sampling
 buf.fragmen: 1 km buffer of forest cover derived from LandSat time series (Hansen et al. 2013)
 
 dcon: distance to nearest conuco
-<!-- For the location of each camera, we downloaded the time series of  Terra Moderate Resolution Imaging Spectroradiometer (MODIS) Vegetation Indices (MOD13Q1) Version 6 with a temporal resolution of 16 days and a spatial resolution of 250 meter (Data source: https://lpdaac.usgs.gov/products/mod13q1v006/).
 
-We used the Normalized Difference Vegetation Index (NDVI) measurements from 2010 to 2019. The time series have n=215 total measurements per camera, but we considered only those with good reliability and production quality of the observations (see product user manual in https://lpdaac.usgs.gov/documents/103/MOD13_User_Guide_V6.pdf).
-
-## Habitat classification
-
--->
 
 ```r
-
 dconucos <- pointDistance(coordinates(conucos)[,1:2], camaras[,c("lon","lat")], lonlat=TRUE)
+
+
+  p <- 1/5
+  w <- 1/((dconucos)^p)
+  idw.conucos <- apply(w,2,sum)
+  camaras$idw.conucos <- apply(w,2,sum)
 
 #distance to nearest
 camaras$min.conucos <- apply(dconucos,2,min)
 
-ggplot(subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=factor(caza.celda), y=min.conucos)) +
-    geom_boxplot()
 
-    ggplot(subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=factor(caza.celda), y=dcom)) +
-        geom_boxplot()
-# dev.flush()
-subset(camaras,bloque %in% sprintf("B%02s",1:6) & min.conucos>7000)
-
-ggplot(subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=factor(caza.celda), y=dcom)) +
-    geom_hist()
+  ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=min.conucos,fill=as.factor(caza.celda))) + geom_histogram(binwidth=500, alpha = .8,col='black') +
+ labs(title="Histogram for distance to conucos") +
+ labs(x="Distance (m)", y="Count")
 
 
-    ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=buf.fragmen,fill=bloque)) + geom_histogram(binwidth=5, alpha = .8,col='black') +
-   labs(title="Histogram for forest cover") +
-   labs(x="Percentage cover", y="Count")
+   ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=wcon,fill=as.factor(caza.celda))) + geom_histogram(alpha = .8,col='black') +
+  labs(title="Histogram for distance to conucos") +
+  labs(x="Distance (m)", y="Count")
+
+ subset(camaras,bloque %in% sprintf("B%02s",1:6) & min.conucos>7000)
+
+```
+
+```r
 
    ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=buf.fragmen,fill=as.factor(caza.celda))) + geom_histogram(binwidth=5, alpha = .8,col='black') +
   labs(title="Histogram for forest cover") +
   labs(x="Percentage cover", y="Count")
 
-  ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=min.conucos,fill=as.factor(caza.celda))) + geom_histogram(binwidth=500, alpha = .8,col='black') +
- labs(title="Histogram for distance to conucos") +
- labs(x="Distance (m)", y="Count")
-   
-    ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(min.conucos)) +
-      geom_histogram(binwidth=500, col="red", fill="green", alpha = .2) +
-     labs(title="Histogram for distance to conuco") +
-     labs(x="Distance (m)", y="Count")
-     ##+ xlim(c(18,52)) + ylim(c(0,30))
+
+#ggplot(subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=factor(caza.celda), y=min.conucos)) +
+#    geom_boxplot()
+
+#    ggplot(subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=factor(caza.celda), y=dcom)) +
+#        geom_boxplot()
+# dev.flush()
+
+#ggplot(subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=factor(caza.celda), y=dcom)) +
+#    geom_hist()
+
+```
+
+```r
+
+    ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=buf.fragmen,fill=bloque)) + geom_histogram(binwidth=5, alpha = .8,col='black') +
+   labs(title="Histogram for forest cover") +
+   labs(x="Percentage cover", y="Count")
+
+
+
+```
+
+
+
+```r
+
+     ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(y=min.conucos,x=buf.fragmen,colour=as.factor(caza.celda),size=caza.celda)) +
+       geom_point() +
+       labs(title="Forest cover vs distance to conuco") +
+      labs(y="Distance (m)", x="Forest cover (%)")
+
+
+           ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(y=wcon,x=buf.fragmen,colour=as.factor(caza.celda),size=caza.celda)) +
+             geom_point() +
+             labs(title="Forest cover vs density of conuco") +
+            labs(y="Density", x="Forest cover (%)")
+
+
+
+```
+
+Eliminar tres puntos mas remotos (> 5km del conuco)
+
+
+```r
+
+ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(y=idw.conucos,x=min.conucos,colour=as.factor(caza.celda),size=caza.celda)) +
+  geom_point()
+
+  #                 +
+  #                 labs(title="Forest cover vs density of conuco") +
+  #                labs(y="Density", x="Forest cover (%)")
+
+
 ```
 
 
@@ -165,7 +210,7 @@ tbl %>% filter(!lack.of.fit & !coef.problems & !overdispersion) %>% arrange(c.ha
 
 ```{r }
 ccs <- data.frame()
-for (spp in c('D.leporina','L.pardalis','C.alector','C.thous','P.onca','D.novemcinctus','M.gouazoubira','D.kappleri','C.paca','L.rufaxilla')) {
+for (spp in c('D.leporina','L.pardalis','C.alector','C.thous','P.onca','D.novemcinctus','M.gouazoubira','D.kappleri','C.paca','L.rufaxilla','E.barbara')) {
   print(spp)
   if (spp %in% c('C.paca','L.pardalis','D.novemcinctus','L.rufaxilla')) {
     print(sw(get(sprintf("oms03.%s",spp))))
@@ -211,9 +256,9 @@ abline(v=0,lty=2,lwd=2,col=2)
 
 
 ```{r}
-ccs  %>% filter(grepl('dcon',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full...F.) -> ss
+ccs  %>% filter(grepl('wcon',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full...F.) -> ss
 par(mar=c(4,8,3,1))
-plot(ss$coef.mavg.,1:nrow(ss),xlim=c(-2.3,2.3),pch=19,xlab=expression(hat(beta)),ylab='',axes=F,main='distance to conuco')
+plot(ss$coef.mavg.,1:nrow(ss),xlim=c(-3.2,3.2),pch=19,xlab=expression(hat(beta)),ylab='',axes=F,main='conuco density')
 segments(ss$X2.5..,   1:nrow(ss),   ss$X97.5..,1:nrow(ss))
 axis(1)
 axis(2,1:nrow(ss),ss$spp,las=2,font=3)
@@ -229,7 +274,7 @@ abline(v=0,lty=2,lwd=2,col=2)
 
 mtz <- data.frame()
 
-for (k in c('C.alector', 'C.paca', 'D.leporina', 'M.gouazoubira', 'D.kappleri', 'D.novemcinctus', 'L.rufaxilla', 'L.pardalis','C.thous','P.onca')) {
+for (k in c('C.paca','C.alector', 'D.leporina', 'M.gouazoubira', 'D.kappleri', 'D.novemcinctus', 'L.rufaxilla', 'L.pardalis','C.thous','P.onca')) {
   if (k %in% c('C.paca','L.pardalis','D.novemcinctus','L.rufaxilla')) {
       mtz <- rbind(mtz,data.frame(species=k,abundance=predict(get(sprintf("mavg03.%s",k)),type='state')$fit,caza=UMF@siteCovs$caza.celda))
     } else {
@@ -258,7 +303,7 @@ ggplot(mtz, aes(x=species, y=abundance, fill=hunting)) + ylab(expression(Sigma *
 Sum of AICc weights indicate a clear effect of p(sfrz) p(dras) and lam(dcon)
 
 ```{r }
-summary(mavg03.C.paca)
+summary(mavg13.C.paca)
 
 
 ```
@@ -278,7 +323,7 @@ summary(mavg01.D.leporina)
 ```{r }
 prd <- predict(mavg01.D.leporina,type='state')
 
-    dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,dcon=UMF@siteCovs$dcon)
+    dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,dcon=UMF@siteCovs$wcon)
 
     ggplot(dtf, aes(x=dcon, y=prd,colour=factor(caza))) +
       geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
@@ -292,19 +337,24 @@ prd <- predict(mavg01.D.leporina,type='state')
 Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional coeficients for those parameters. Strong negative significative effect of conucos.
 
 ```{r }
-summary(mavg01.C.alector)
+summary(mavg11.C.alector)
 
 ```
 
 
 ```{r }
-prd <- predict(mavg01.C.alector,type='state')
-dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,dcon=UMF@siteCovs$dcon)
+prd <- predict(mavg11.C.alector,type='state')
+##prd <- ranef(mavg01.C.alector,type='state')
+dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,wcon=UMF@siteCovs$wcon,bsq=UMF@siteCovs$buf.fragmen)
 
 
-    ggplot(dtf, aes(x=dcon, y=prd,colour=factor(caza))) +
+ggplot(dtf, aes(x=wcon, y=prd,colour=factor(caza))) +
+  geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
+    geom_point() + xlab("distance to conucos") + ylab("Predicted values") + labs(colour='Hunting')
+
+    ggplot(dtf, aes(x=bsq, y=prd,colour=factor(caza))) +
       geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
-        geom_point() + xlab("distance to conucos") + ylab("Predicted values") + labs(colour='Hunting')
+        geom_point() + xlab("bosque") + ylab("Predicted values") + labs(colour='Hunting')
 
 ```
 
@@ -367,30 +417,33 @@ ggplot(dtf, aes(x=dcon, y=prd,colour=factor(caza))) +
 
 Most support for p(sfrz)+lam(evi.mu) but no significant conditional coefficients . Very weak  non-significant effect of conucos.
 
-```{r }
-arch <- sprintf("%s/Rdata/occuRN/D.kappleri.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
-
-```
 
 
 ### L. pardalis
 
-Most support for p(dras)+p(sfrz)+lam(evi.mu)+lam(wcon), significant conditional coeficients for those parameters. Strong negative significative effect of conucos.
+Most support for null model.
 
 ```{r }
-arch <- sprintf("%s/Rdata/occuRN/L.pardalis.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
+summary(mavg01.L.pardalis)
 
 ```
 
 
 
+```{r }
+prd <- predict(mavg01.L.pardalis,type='state')
+dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,dcon=UMF@siteCovs$dcon,bsq=UMF@siteCovs$buf.fragmen)
 
 
+ggplot(dtf, aes(x=dcon, y=prd,colour=factor(caza))) +
+  geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
+    geom_point() + xlab("distance to conucos") + ylab("Predicted values") + labs(colour='Hunting')
 
+    ggplot(dtf, aes(x=bsq, y=prd,colour=factor(caza))) +
+      geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
+        geom_point() + xlab("forest cover") + ylab("Predicted values") + labs(colour='Hunting')
+
+```
 
 
 
@@ -398,95 +451,70 @@ summary(model.avg(oms, subset = delta < 10))
 
 
 ### D. novemcinctus
-
-```{r }
-arch <- sprintf("%s/Rdata/occuRN/D.novemcinctus.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
-
-```
+``
 
 
 ### M. americana
- Best model is p(date)   p(sfrz) lam(evi.mu) but very large coeficients for p(Int) and p(sfrz)
-```{r }
-arch <- sprintf("%s/Rdata/occuRN/M.americana.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
-
-```
 
 
 ### T.tetradactyla
 
-Null model is best model
-```{r }
-arch <- sprintf("%s/Rdata/occuRN/T.tetradactyla.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
-
-```
 
 
 ### E.barbara
+
+Large coefficients lead to large, unrealistic abundance predictions
+
 ```{r }
-arch <- sprintf("%s/Rdata/occuRN/E.barbara.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
+summary(mavg01.E.barbara)
+
 ```
 
+```{r }
+prd <- predict(mavg01.E.barbara,type='state')
+dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,dcon=UMF@siteCovs$dcon,bsq=UMF@siteCovs$buf.fragmen)
+
+
+ggplot(dtf, aes(y=dcon, x=bsq,size=prd,colour=factor(caza))) +
+    geom_point() + ylab("distance to conucos  (standardised values)") + xlab("Forest cover (standardised values)") + labs(colour='Hunting',size='Predicted values')
+
+
+```
 
 
 ### T.terrestris
 
+Very large standard errors
+```{r }
+summary(mavg03.T.terrestris)
+
+```
+
 
 ```{r }
-arch <- sprintf("%s/Rdata/occuRN/T.terrestris.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
+prd <- predict(mavg03.T.terrestris,type='state')
+dtf <- data.frame(prd=prd$fit,se=prd$se.fit,caza=UMF@siteCovs$caza.celda,dcon=UMF@siteCovs$dcon,bsq=UMF@siteCovs$buf.fragmen)
+
+
+ggplot(dtf, aes(y=dcon, x=bsq,size=prd,colour=factor(caza))) +
+    geom_point() + ylab("distance to conucos  (standardised values)") + xlab("Forest cover (standardised values)") + labs(colour='Hunting',size='Predicted values')
+
+
 ```
 
 
 ### D.imperfecta
 
-```{r }
-arch <- sprintf("%s/Rdata/occuRN/D.imperfecta.rda",script.dir)
-load(arch)
-summary(model.avg(oms, subset = delta < 10))
-```
 
 
 ### M.gouazoubira
 
-```{r }
-arch <- sprintf("%s/Rdata/occuRN/M.gouazoubira.rda",script.dir)
-lst <- (load(arch))
-summary(model.avg(oms, subset = delta < 10))
-```
 
 ### N.nasua
 
-```{r }
-arch <- sprintf("%s/Rdata/occuRN/N.nasua.rda",script.dir)
-lst <- (load(arch))
-summary(model.avg(oms, subset = delta < 10))
-```
 
 ### M.tridactyla
 
-```{r }
-arch <- sprintf("%s/Rdata/occuRN/M.tridactyla.rda",script.dir)
-lst <- (load(arch))
-summary(model.avg(oms, subset = delta < 10))
-```
 
 
 ### P. onca
-
-If c-hat >1, then we use QAICc
-
-```{r }
-arch <- sprintf("%s/Rdata/occuRN/P.onca.rda",script.dir)
-lst <- (load(arch))
-summary(model.avg(oms, subset = delta < 10))
-```
