@@ -31,6 +31,14 @@ camaras <- subset(camaras,bloque %in% sprintf("B%02d",1:6) )
 ## x <- extract(dist.conucos,camaras[,c("lon","lat")])
 ## camaras$dcon <- (x-mean(x))/sd(x)
 
+# filtro por distancia:
+#dconucos <- pointDistance(coordinates(conucos)[,1:2], camaras[,c("lon","lat")], lonlat=TRUE)
+#p <- 1/5
+#w <- 1/((dconucos)^p)
+#idw.conucos <- apply(w,2,sum)
+
+camaras <- subset(camaras,camaras$dcon<5500)
+
 #### Sampling effort: data from camera traps dividied in weeks
 
 fecha1 <-chron(dates.=as.character(camaras[,"fecha.act"]),

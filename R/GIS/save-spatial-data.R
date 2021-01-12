@@ -264,7 +264,7 @@ for (aa in archs) {
   dconucos <- pointDistance(coordinates(conucos)[,1:2], camaras[,c("lon","lat")], lonlat=TRUE)
 
   #distance to nearest
-  min.conucos <- apply(dconucos,2,min)/max(dconucos)/9000
+  min.conucos <- apply(dconucos,2,min) # /max(dconucos)/9000
 
   # IDW
   # g(u) = (sum of w[i] )
