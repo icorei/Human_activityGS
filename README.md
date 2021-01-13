@@ -20,6 +20,8 @@ Contains code (R scripts) for analysis and output figures in pdf
 
 #### References
 
+## Analysis in katana
+
 Start interactive session with graphical session and test...
 ```sh
 ssh -X $zID@katana.restech.unsw.edu.au
@@ -41,7 +43,7 @@ source $HOME/proyectos/IVIC/Hunting_in_GS/env/load.sh
 cd $WORKDIR
 qsub -J 1-2 $SCRIPTDIR/pbs/run-occu-models.pbs
 qsub -J 3-29 $SCRIPTDIR/pbs/run-occu-models.pbs
-qsub -J 22-23 $SCRIPTDIR/pbs/run-occu-models.pbs
+##qsub -J 22-23 $SCRIPTDIR/pbs/run-occu-models.pbs
 qstat -tu $(whoami)
 
 qsub -I -l select=1:ncpus=2:mem=8gb,walltime=4:00:00

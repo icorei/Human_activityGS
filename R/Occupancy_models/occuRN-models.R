@@ -72,6 +72,7 @@ table(eventos$sessions,useNA='always')
 
 camaras$cdg <- as.character(camaras$ID.original) # paste(camaras$bloque,camaras$camera)
 eventos$cdg <- as.character(camaras$ID.original)[match(paste(eventos$bloque,eventos$periodo,eventos$camara), paste(camaras$bloque,camaras$period,camaras$camera))]
+eventos <- subset(eventos,cdg %in% camaras$cdg)
 
 mtz <- matrix(0,nrow=length(unique(camaras$cdg)),ncol=length(semanas)-1,dimnames=list(unique(camaras$cdg),as.character(semanas)[-1]))
 
