@@ -1,8 +1,9 @@
+source ~/proyectos/IVIC/Hunting_in_GS/env/load.sh
 cd $WORKDIR
 nohup Rscript --vanilla $SCRIPTDIR/R/GIS/save-spatial-data.R &
 ls -lah $SCRIPTDIR/Rdata
 
-nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/occuRN-models.R &
+##nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/occuRN-models.R &
 
 source ~/proyectos/IVIC/Hunting_in_GS/env/load.sh
 cd $WORKDIR
