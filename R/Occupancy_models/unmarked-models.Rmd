@@ -52,7 +52,7 @@ dcon: distance to nearest conuco
 
 
 ```{r}
-ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=dcon,y=wcon,colour=as.factor(caza.celda>0))) + geom_point() +
+ggplot(data=subset(camaras,bloque %in% sprintf("B%02i",1:6)), aes(x=dcon,y=wcon,colour=as.factor(caza.celda>0))) + geom_point() +
 labs(title="Distance to nearest conucos vs. density of conucos") +
 labs(x="Distance (m)", y="Number of conucos (Inverse Distance Weighted)",colour="Hunting")
 ##ggsave("Fig-distnce-density-conucos.png")
@@ -60,27 +60,36 @@ labs(x="Distance (m)", y="Number of conucos (Inverse Distance Weighted)",colour=
 ```
 
 ```{r,eval=FALSE,echo=FALSE}
-ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=dcon,fill=as.factor(caza.celda))) + geom_histogram(binwidth=500, alpha = .8,col='black') +
+ggplot(data=subset(camaras,bloque %in% sprintf("B%02i",1:6)), aes(x=dcon,fill=as.factor(caza.celda))) + geom_histogram(binwidth=500, alpha = .8,col='black') +
 labs(title="Histogram for distance to conucos") +
 labs(x="Distance (m)", y="Count")
 
-ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=wcon,fill=as.factor(caza.celda))) + geom_histogram(alpha = .8,col='black') +
+ggplot(data=subset(camaras,bloque %in% sprintf("B%02i",1:6)), aes(x=wcon,fill=as.factor(caza.celda))) + geom_histogram(alpha = .8,col='black') +
 labs(title="Histogram for distance to conucos") +
-labs(x="Distance (m)", y="Count")
+labs(x="Density", y="Count")
 ```
 
 ```{r}
-subset(camaras,bloque %in% sprintf("B%02s",1:6) & dcon>7000)
+table(coordinates((conucos))[,1]>-61.3) # number of conucos in the study area
+length(with(subset(camaras,bloque %in% sprintf("B%02i",1:6) & caza.celda>0),unique(grid)))
+field.walk <- subset(track_points,coordinates(track_points)[,1]>-61.3)
+field.xy <- spTransform(field.walk,crs("+proj=utm +zone=19n"))
+walk.dist <- pointDistance(coordinates(field.xy)[-length(field.xy),], coordinates(field.xy)[-1,], lonlat=FALSE, allpairs=FALSE)
+walk.effort <- aggregate(walk.dist/1000,list(field.walk$time[-1]),sum)
+ table(subset(eventos,bloque %in% sprintf("B%02i",1:6))$camara)
+
+
+subset(camaras,bloque %in% sprintf("B%02i",1:6) & dcon>7000)
 ```
 
 ```{r,eval=FALSE,echo=FALSE}
- ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=buf.fragmen,fill=as.factor(caza.celda))) + geom_histogram(binwidth=5, alpha = .8,col='black') +
+ ggplot(data=subset(camaras,bloque %in% sprintf("B%02i",1:6)), aes(x=buf.fragmen,fill=as.factor(caza.celda))) + geom_histogram(binwidth=7.5, alpha = .8,col='black') +
 labs(title="Histogram for forest cover") +
 labs(x="Percentage cover", y="Count")
 ```
 
 ```{r,eval=FALSE,echo=FALSE}
-ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(x=buf.fragmen,fill=bloque)) + geom_histogram(binwidth=5, alpha = .8,col='black') +
+ggplot(data=subset(camaras,bloque %in% sprintf("B%02i",1:6)), aes(x=buf.fragmen,fill=bloque)) + geom_histogram(binwidth=5, alpha = .8,col='black') +
 labs(title="Histogram for forest cover") +
 labs(x="Percentage cover", y="Count")
 ```
@@ -89,7 +98,7 @@ labs(x="Percentage cover", y="Count")
 
 ```{r}
 
-ggplot(data=subset(camaras,bloque %in% sprintf("B%02s",1:6)), aes(y=dcon,x=buf.fragmen,colour=as.factor(caza.celda>0))) +
+ggplot(data=subset(camaras,bloque %in% sprintf("B%02i",1:6)), aes(y=dcon,x=buf.fragmen,colour=as.factor(caza.celda>0))) +
 geom_point() +
 labs(title="Forest cover vs distance to conuco") +
 labs(y="Distance (m)", x="Forest cover (%)",colour="Hunting")
