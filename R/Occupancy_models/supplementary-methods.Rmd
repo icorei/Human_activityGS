@@ -1,0 +1,485 @@
+---
+title: "Latent abundance mixture models for mammals and birds in La Gran Sabana, Venezuela"
+author: "Ferrer-Paris, J.R.; Stachowicz, I; Sanchez-Mercado, A."
+date: January 20, 2021
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE)
+
+
+if (Sys.getenv("WORKDIR") == "") {
+   ## for Izza:
+   work.dir <- "D:/PROJECTS/Gran Sabana/Metodologia"
+   script.dir <- "???"
+} else {
+   ## for JR:
+   work.dir <- Sys.getenv("WORKDIR")
+   script.dir <- Sys.getenv("SCRIPTDIR")
+}
+
+```
+
+We want to test the response of mammal and bird species to the proximity of "conucos" in an area of the Gran Sabana in Venezuela using data from a pre-existing camera trap survey.
+
+First we describe the general workflow for fitting the model for one species (*Dasyprocta leporina*) in four steps: (1) setup of analysis, (2) model fitting, (3) GoF, model criticism, and model selection, and (4) analysis of results.
+
+Then we run this process for all target species in a batch and present the summary of result for all of them at the end of the document.
+
+# Model for *Dasyprocta leporina*
+
+## Setup of the analysis
+
+We load up the R packages needed for the analysis and load the Rdata file with all the data.
+
+```{r}
+require(unmarked)
+require(AICcmodavg)
+require(chron)
+require(raster)
+require(cluster)
+require(MuMIn)
+require(dplyr)
+require(ggplot2)
+require(RColorBrewer)
+
+
+setwd(work.dir)
+GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
+load(GIS.data)
+
+```
+
+### Sampling design and camera trap location
+
+We used data from a previous camera trap survey conducted between September 2015 – April 2016. The original sampling design was developed to optimize covering habitat diversity in order to evaluate how mammal species richness is related to habitat types, and is described in detail in Stachowicz et al. (2020), but we provide here a brief summary of the initial setting and how we adapted data a posteriori for our analysis. Sampling design comprised six $50 km^2$ blocks within the study area (B01 – B06) each one subdivided into 25 sampling units of $2 km^2$.
+
+The sampling universe included $N=150$ sampling units, but only 30 cameras were available, thus sampling was divided into three periods of 60-days each, and in each period a two-levels stratified random sampling was used to select 30 sampling units (five in each block) for camera deployment. This stratification ensures a balanced representation of sampling units with different coverage of habitat types and fragmentation in each block during each period. As a side effect of this, some sampling units with unique values within each block (for example cells with high tree cover within a block dominated by savanna) were selected for sampling in two or three periods and those cameras were neither relocated nor replaced.
+
+We filter the camera data and show their location in relation with the blocks 1 to 6 located in the eastern part of the Gran Sabana on the border of the Canaima National Park, circle size and colour is proportional to the time the camera was active (duration):
+
+```{r}
+
+camaras %>% filter(bloque %in% sprintf("B%02i",1:6)) %>%
+  mutate(bloque=droplevels(bloque),
+    fecha1 = chron(dates.=as.character(fecha.act), times.=as.character(hora.act),
+      format = c(dates = "y-m-d", times = "h:m:s")),
+    fecha2 = chron(dates.=as.character(fecha.desact.real),
+    times.=as.character(hora.desact.real),
+      format = c(dates = "y-m-d", times = "h:m:s")),
+    cdg = as.character(ID.original)) %>%
+  group_by(cdg) %>%
+  summarise(lat=mean(lat), lon=mean(lon), bloque=unique(bloque),
+    hunting=unique(factor(caza.celda>0)), grp=unique(grp), H=mean(H), h=mean(h),
+    bsq=mean(buf.fragmen), ndvi=mean(ndvi.mu), fecha1=min(fecha1),
+    fecha2=max(fecha2)) %>%
+  mutate(duration=as.numeric(fecha2-fecha1)) ->
+    cam.data
+```
+
+We map the location of cameras in relation to the blocks
+
+```{r}
+sampling.design <- subset(grd,cuadrado %in% 1:6)
+
+map <- ggplot() +
+  geom_polygon(data = sampling.design,
+    aes(x = long, y = lat, group = group), colour = "black", fill = NA)
+
+map + theme_void() + coord_equal() +
+  geom_point(data=cam.data,
+    mapping=aes(x=lon,y=lat,size=duration,colour=duration))
+
+```
+
+### Vegetation / habitat types
+
+Blocks were selected to represent landscapes with different values of total forest cover ($h$) and landscape fragmentation index ($H$; Stachowicz et al. 2020) :
+
+```{r}
+cam.data %>% select(bloque,H,h) %>% unique()
+```
+
+Vegetation is dominated by scrub (_Clusia_ spp. and _Gongylolepis_ spp.), broadleaf grassland and savannas of Axonopus spp. and patches of gallery forest around the rivers, and evergreen montane surrounding the Ilú and Tramén tepuis massif. Sampling units were selected to represent the different habitat types present in each block:
+
+```{r}
+cam.data %>% select(bloque,grp) %>% table()
+```
+
+
+Previous analysis suggested that most mammal species in the study area are associated with forest habitat and few are associated with shrubs or savanna (Stachowicz et al. 2020). We used mean tree cover (in percentage) as a quantitative variable correlated with these habitat types and consistent with metrics used for the sampling design.  Mean tree cover was calculated from remote sensing products (Hansen et al. 2003) using a 1 km buffer around the camera location, the variable has a bimodal distribution with a lower mode at 10-20% corresponding with the savanna, a higher mode at 70-80% corresponding with forest and intermediate values roughly corresponding with the less common shrub habitat.
+
+These groups have different values of tree cover and vegetation indices estimated from remote sensors
+
+```{r}
+ggplot(cam.data, aes(x=grp, y=bsq)) +
+    geom_boxplot(notch=F) + # or notch=T
+    labs(title="Tree cover around the camera sites for each habitat type (1km)") +
+    labs(y='% tree cover', x="habitats",caption="Tree cover from Hansen et al. (2013)")
+```
+
+```{r}
+ggplot(cam.data, aes(x=grp, y=ndvi)) +
+    geom_boxplot(notch=F) + # or notch=T
+    labs(title="NDVI around the camera sites for each habitat type (500m)") +
+    labs(y='Normalized difference vegetation index', x="habitats",
+      caption="NDVI derived from MODIS")
+```
+
+These two measures of vegetation are significantly correlated with landscape metrics for the blocks:
+
+```{r}
+cam.data %>% select(bsq,ndvi,H,h) %>% cor()
+ with(cam.data,cor.test(bsq,H))
+```
+
+### Influence of human populations / conucos
+
+The Pemón are the only indigenous people inhabiting the Gran Sabana. There are four communities within the study area: Kawi (1100 m; - 61.243 W; 5.451 N; 50 people 2016), Mare-Paru (884 m; - 61.184 W; 5.594 N; 45 people in 2016), Uroy-Uaray (1,093 m; - 61.232 W; 5.442 N; 150 people in 2016) and Wuarapata (896 m; - 61.157; W 5.512 N; 50 people in 2016; information about the number of inhabitants was obtained from community leaders or capitanes).
+
+We calculate the distance from each camera to the nearest community, blocks 1 and 5 are furthest away from the communities:
+
+```{r}
+d1 <- pointDistance(cam.data[,c("lon","lat")],
+  coordinates(comunidades), lonlat=T, allpairs=T)
+
+cam.data$dcom <- apply(d1,1,min)
+
+ggplot(cam.data, aes(x=dcom,fill=bloque)) +
+  geom_histogram(binwidth=500, alpha = .8,col='black') +
+  labs(title="Histogram for distance to communities") +
+  labs(x="Distance (m)", y="Count")
+```
+
+During fieldwork we marked with a GPS the location of active and recently abandoned conucos (n=25) identified in situ and hunting sites (n=32) reported by interviewees and confirmed by the local guides.
+
+```{r}
+table(coordinates((conucos))[,1]>-61.3) #
+table(cam.data$hunting)
+```
+
+Distance from each camera to the nearest conuco was calculated using the GPS coordinates from cameras and conucos. This variable had an asymmetric distribution with a mean value of 1.58 km and a range from 0 to 8 km. We also recorded which cameras were located adjacent or near reported hunting sites (binomial variable hunting, FALSE n = 23, TRUE n = 34). Notice that three camaras are located in savanna habitat more than 5km from the nearest conuco.
+
+```{r}
+d1 <- pointDistance(cam.data[,c("lon","lat")], coordinates(conucos)[,1:2], lonlat=T,allpairs=T)
+
+cam.data$dcon <- apply(d1,1,min)
+
+ggplot(cam.data,aes(x=dcom,y=dcon,shape=grp,colour=hunting,size=duration)) +
+geom_point() + labs(title="Distance to communities and conucos") +
+labs(y="Distance to conucos (m)", x="Distance to communities (m)")
+
+```
+
+
+As an alternative measure of the influence of conuco, we calculate density as $g(u) = (\sum w[i] )$ where the the weights are the inverse p-th powers of distance, $w[i] = 1/d(u,x[i])^p$ where $d(u,x[i])$ is the Euclidean distance from u to x[i].
+
+```{r}
+
+p <- 0.25
+w <- 1/((d1)^p)
+cam.data$wcon <- apply(w,1,sum)
+
+ggplot(cam.data,
+  aes(y=wcon,x=dcon,colour=hunting,size=duration)) +
+geom_point()
+```
+
+We check their correlation
+
+```{r}
+cam.data %>% select(dcon,wcon,dcom) %>% cor()
+# distance to conuco and density are neg. correlated
+with(cam.data,cor.test(dcon,wcon))
+# distance to conuco and dist. to communities are not sig. correlated
+ with(cam.data,cor.test(dcom,dcon))
+```
+
+
+ Here we plot distance to nearest conuco/community against tree cover:
+
+ ```{r}
+ cam.data$dhum <- with(cam.data,ifelse(dcon<dcom,dcon,dcom))
+
+ggplot(data=cam.data, aes(y=dhum,x=bsq,colour=hunting,size=duration)) +
+geom_point() +
+labs(title="Forest cover vs distance to nearest conuco/community") +
+labs(y="Distance (m)", x="Forest cover (%)",colour="Hunting")
+##ggsave("Fig-bosque-caceria.pdf")
+
+
+```
+
+### Signs of animal activity
+
+
+We also recorded direct observations and indirect evidence (scats, tracks, scratches on trees, burrows, etc) of animal presence along the routes walked during field work, and recorded their coordinates with GPS. We had a total of n=159 records during 29 days of camera deployment and maintenance, with a mean of 16.8 km walked each day.
+
+```{r}
+table(subset(eventos,bloque %in% sprintf("B%02i",1:6))$camara %in% "RAS")
+
+
+field.walk <- subset(track_points,coordinates(track_points)[,1]>-61.3)
+field.xy <- spTransform(field.walk,crs("+proj=utm +zone=19n"))
+walk.dist <- pointDistance(coordinates(field.xy)[-length(field.xy),], coordinates(field.xy)[-1,], lonlat=FALSE, allpairs=FALSE)
+walk.effort <- aggregate(walk.dist/1000,list(field.walk$time[-1]),sum)
+
+summary(walk.effort$x)
+
+```
+
+We would expect that detection will be higher near areas of more animal activity. We calculate density of animal observations and tracks as $g(u) = (sum of w[i] )$ where the the weights are the inverse p-th powers of distance, $ w[i] = 1/d(u,x[i])^p$ where d(u,x[i]) is the Euclidean distance from u to x[i].
+
+```{r}
+drastros <- pointDistance(subset(eventos,camara %in% "RAS")[,c("long","lat")], cam.data[,c("lon","lat")], lonlat=TRUE)
+
+p <- 0.25
+w <- 1/((drastros)^p)
+cam.data$dras <- apply(w,2,sum)
+
+ggplot(cam.data,aes(x=dras,fill=bloque)) +
+geom_histogram(binwidth=.5, alpha = .8,col='black') +
+labs(title="Histogram for density of animal tracks") +
+labs(x="Density", y="Count")
+```
+
+### Summarizing detections from the camera trap survey
+
+Total sampling effort was 4,548 cameras per day, resulting in 7,466 captures, which translated into 771 detection events for mammals and 226 detection events for birds across 86 sampling units (Table 2 in Stachowicz et al., 2020). We identified mammal species (Eisenberg, 1989; Linares, 1998) and birds (Hilty, Tudor & Gwynne, 2003) using reference works for Venezuela and South America. We can summarize the number of events, fotos and individuals for each species:
+
+```{r}
+
+eventos %>% mutate(on.camera=!camara %in% "RAS") %>%
+  group_by(species,on.camera) %>%
+    summarise(events=n(),fotos=sum(fotos),inds=sum(number.of.animals))
+
+```
+
+
+We now filter the detection events registered on cameras for a single species (here *Dasyprocta leporina*):
+
+
+```{r}
+
+eventos$cdg <- as.character(camaras$ID.original)[
+  match(paste(eventos$bloque,eventos$periodo,eventos$camara),
+    paste(camaras$bloque,camaras$period,camaras$camera))]
+
+eventos %>% mutate(f1 = chron(dates.=sprintf("%s-%s-%s",ano,mes,dia),
+    times.=as.character(hora.ini),
+    format = c(dates = "y-m-d", times = "h:m:s")),
+  f2 = chron(dates.=sprintf("%s-%s-%s",ano,mes,dia),
+    times.=as.character(hora.ini),
+    format = c(dates = "y-mon-d", times = "h:m:s"),
+    out.format = c(dates = "y-m-d", times = "h:m:s"))) %>%
+  transmute(cdg, camara, fotos, species=as.character(species), number.of.animals, fecha=chron(ifelse(is.na(f2),f1,f2),
+      format = c(dates = "y-m-d", times = "h:m:s"))) %>%
+  filter(cdg %in% cam.data$cdg & species %in% "D.leporina") ->
+    event.data
+
+event.data %>%
+  mutate(on.camera=!camara %in% "RAS") %>%
+    group_by(species,on.camera) %>%
+      summarise(events=n(),fotos=sum(fotos),inds=sum(number.of.animals))
+```
+
+
+To fit the model, we have to divide the continuous camera record (from camera activation to deactivation) into visits of fixed length. So we define a simple function to transform the list of events to a matrix:
+
+
+```{r}
+make.obs.matrix <- function(x,y,w=NULL) {
+  mtz <- matrix(0,nrow=length(unique(x$cdg)),
+    ncol=length(y)-1,
+      dimnames=list(unique(x$cdg),as.character(y)[-1]))
+  for (k in 1:nrow(x)) {
+     mtz[ x[k,"cdg"],] <-
+      mtz[ x[k,"cdg"],] +
+        table(cut(seq(x$fecha1[k],x$fecha2[k],by=1),
+          breaks=y,label=as.character(y)[-1]))
+  }
+  if (!is.null(w)) {
+    w %>%  mutate(sessions=cut(fecha,breaks=y,label=as.character(y)[-1])) -> z
+
+    mtz[mtz==0] <- NA
+    mtz <- mtz*0
+    for (k in  seq(along=z$species)) {
+       mtz[z[k,"cdg"],z[k,"sessions"]] <-
+        mtz[z[k,"cdg"],z[k,"sessions"]] +
+          z[k,"number.of.animals"]
+    }
+  }
+  return(mtz)
+}
+
+```
+
+We set a start date on the 21 september 2015, and select visit duration to create the matrix of sampling effort and observations. Initially we used a visit duration of one week, but this yields a large matrix with several zeros (no observations) and *NAs* (camera inactive):
+
+```{r}
+
+ini <- chron(dates.="2015-09-21",times.="00:00:00",
+  format = c(dates = "y-m-d", times = "h:m:s"))
+visits <- ini + seq(from=7,by=7,length.out=28)
+
+obs <- make.obs.matrix(data.frame(cam.data),visits,data.frame(event.data))
+table(obs,useNA='always')
+
+```
+
+We test larger visit duration to balance the number of zeros in the observation matrix, but this also reduces the number of detections. In fact we are "degrading" the input data since we are aggregating all detections per combination of site/visit, so multiple events get reduced to a single value of "1" (Kery and Royle 2016).
+
+```{r}
+visits2 <- ini + seq(from=0,to=210,by=14)
+visits3 <- ini + seq(from=0,to=210,by=21)
+visits4 <- ini + seq(from=0,to=210,by=28)
+clrs <- brewer.pal(3,'YlOrRd')
+
+layout(matrix(1:4,ncol=4))
+par(oma=c(2,2,0,0),mar=c(2,2,4,1))
+obs <- make.obs.matrix(data.frame(cam.data),visits,data.frame(event.data))
+image(1:ncol(obs),1:nrow(obs),t(obs>0),pty='m',col=clrs,xlab="",ylab="",main='7 days')
+obs <- make.obs.matrix(data.frame(cam.data),visits2,data.frame(event.data))
+image(1:ncol(obs),1:nrow(obs),t(obs>0),pty='m',col=clrs,xlab="",ylab="",main='14 days')
+obs <- make.obs.matrix(data.frame(cam.data),visits3,data.frame(event.data))
+image(1:ncol(obs),1:nrow(obs),t(obs>0),pty='m',col=clrs,xlab="",ylab="",main='21 days')
+obs <- make.obs.matrix(data.frame(cam.data),visits4,data.frame(event.data))
+image(1:ncol(obs),1:nrow(obs),t(obs>0),pty='m',col=clrs,xlab="",ylab="",main='28 days')
+
+mtext('Visits',1,outer=T)
+mtext('Sites (cameras)',2,outer=T)
+```
+
+## Model fitting
+
+For each species we fit a hierarchical Bernoulli/Poisson N‐mixture model (Royle–Nichols models, RN-models: Royle & Nichols, 2003) to evaluate how the probability of occupancy relates to forest cover and distance to conuco, allowing for abundance-induced heterogeneity in detection probability. RN‐models are based on the assumption that the detection probability at a survey point $p_{ij}$ depends on the species’ site‐specific abundance $N_i$:
+
+$p_{ij} = 1- (1 - r_{ij})N_i$
+
+where $r_{ij}$ is the detection probability of a single individual. Repeated visits at a survey point generate a history of detection/nondetection events $y_{ij}$, from which $p_{ij}$  is estimated. The abundance state ($N_i$) of site $i$ was modeled as $N_i ~ Poison (\lambda_i)$, while the observation process was modeled as $y_{ij}/ N_i ~ Bernoulli (p_{ij} )$. Estimation of $p_{ij}$ allows us to draw conclusions about N_i.
+
+In order to build detection histories for species recorded during the camera trap survey, we considered each camera location as a “site” ($i$; 57 in total). We divided the total sampling period of 180 days into several ‘‘visits’’ ($j$). Here we use a visit duration of 21 days.
+
+
+
+### Formatting input
+
+Now we arrange all data into a `unmarkedFrameOccu` object, we start with the detection history and observation covariates:
+
+```{r}
+## Detection history
+obs <- make.obs.matrix(data.frame(cam.data),visits3,data.frame(event.data))
+
+## Observation covariates:
+## sampling effort
+sfrz <- make.obs.matrix(data.frame(cam.data),visits3)
+
+## observation date
+x <- seq(-1,1,length=ncol(obs))
+obsDate <- matrix(rep(x,nrow(obs)),nrow=nrow(obs),byrow=T)
+```
+
+Now the site covariates:
+
+```{r}
+sC <- data.frame(cam.data[match(rownames(obs),cam.data$cdg),c("bloque","H","h","dcon","dcom","wcon","dhum","bsq","ndvi","grp","dras","hunting")])
+sC$bloque <- droplevels(sC$bloque)
+## we select all camaras up to 5km from the conucos
+ss <- sC$dcon<5000
+
+```
+
+We will standardize some variables:
+
+```{r}
+for (k in c("H","h","dcon","dras","ndvi","bsq","dcom","wcon","dhum")) {
+   sC[,k] <- (sC[,k]-mean(sC[,k]))/sd(sC[,k])
+}
+```
+
+Now everything together:
+
+```{r}
+
+UMF <- unmarkedFrameOccu((obs[ss,]>0)+0,
+  siteCovs=sC[ss,,drop=F],
+  obsCovs=list(date=obsDate[ss,],sfrz=sfrz[ss,]/21))
+```
+
+
+### Explore alternative models
+We fit a null model using the blocks as covariates but the model is not identifiable:
+
+```{r}
+occuRN(~ bloque+sfrz ~ bloque, UMF,K=50)
+```
+
+
+```{r}
+
+
+fm11 <- occuRN(~ H+h+sfrz+date+dras ~ H+h+grp+bsq, UMF,K=50)
+
+fm01 <- occuRN(~ H+h+sfrz ~ H+h+grp, UMF,K=50)
+fm02 <- occuRN(~ H+h+date+sfrz ~ H+h+grp, UMF,K=50)
+fm03 <- occuRN(~ H+h+date+dras+sfrz ~ H+h+grp, UMF,K=50)
+fm04 <- occuRN(~ date+dras+sfrz ~ H+h+grp, UMF,K=50)
+
+model.sel(list(fm01,fm02,fm03,fm04))
+
+fm11 <- occuRN(~ H+h+sfrz ~ H+h, UMF,K=50)
+fm12 <- occuRN(~ H+h+sfrz ~ H+h+grp, UMF,K=50)
+fm13 <- occuRN(~ H+h+sfrz ~ bsq, UMF,K=50)
+fm14 <- occuRN(~ H+h+sfrz ~ ndvi, UMF,K=50)
+
+model.sel(list(fm11,fm12,fm13,fm14))
+
+fm21 <- occuRN(~ date+sfrz+dras ~ H+h, UMF,K=50)
+fm22 <- occuRN(~ date+sfrz+dras ~ H+h+grp, UMF,K=50)
+fm23 <- occuRN(~ date+sfrz+dras ~ bsq, UMF,K=50)
+fm24 <- occuRN(~ date+sfrz+dras ~ ndvi, UMF,K=50)
+
+model.sel(list(fm21,fm22,fm23,fm24))
+
+fm12 <- occuRN(~ date+sfrz+dras ~ bsq+dcon, UMF,K=50)
+fm13 <- occuRN(~ date+sfrz+dras ~ bsq+wcon, UMF,K=50)
+fm14 <- occuRN(~ date+sfrz+dras ~ bsq+dhum, UMF,K=50)
+
+AIC(fm00,fm01,fm10,fm11,fm12,fm13,fm14)
+```
+
+```{r}
+(fm01 <- occuRN(~ dras+date+sfrz ~ H+h, UMF,K=50))
+
+```
+
+For this study we calculated tree cover and distance to nearest conuco as covariates of species abundance.
+
+
+
+
+
+Covariates of Ni (site covariates) and pij (observation covariates) were modeled using the logit link. To test our hypothesis we need a measure of influence of conucos while controlling for the influence of habitat on species abundance, and the spatial and temporal heterogeneity in probability of detection. We explored several covariates with alternative parameterizations to ensure best possible model fit given the restricted sample size and low number of detection for some species, (see Suppl. Material for details). As site covariates we used tree cover percentage around the camera trap (tree_buffer) and distance to nearest conuco (dist_conuco), both variables were standardized to zero mean and unit standard deviation. We used 1 km radius under the assumption that it is wide enough to represent the area of the most abundant game species home range (Cuniculus paca 2 - 3 ha, Jorge and Peres 2005; Dasyprocta leporina 3.4 - 1.6 ha, Benavides et al. 2017) and narrow enough to maintain variability in tree cover within the scale of a camera trapping site (Scotsont et al 2017). Since a couple of species might be associated with shrub habitat with intermediate values of tree cover (Stachowicz et al. 2020) we added a quadratic term (tree_buffer2) to their models.
+
+We used sampling date, sampling effort (camera/day), and density of direct and indirect off-camera records to account for spatial and temporal heterogeneity in detectability (Cubaynes et al., 2010, REFs). Sampling date (date) was recorded as the number of days since the start of sampling (21 September 2015) to the beginning of the “visit” and  standardized to zero mean and unit standard deviation. Sampling effort (effort) was calculated as the number of days the camera remained active divided by the duration of the visit. Thus, effort was always $\leq 1$, and was set to empty value (NA) when the camera was not present or inoperative during the whole duration of the visit.  We calculated tracks density (tracks_dens) as the inverse distance weighted sum of wildlife activity recorded off-camera (direct observations and indirect evidence of animal presence during field-work):
+Eq. 4 track_densi = j=1k1/dijp ,
+where dij is the distance between camera i and record j for all k = 159 records, and p = 0.25. The result was standardized to zero mean and unit standard deviation.
+
+For each species, we fitted a full model including the three observation covariates (p (date + effort + tracks_dens)) and the two site covariates ($\lambda$(tree_buffer + tree_buffer2 + dist_conuco)) using the occuRN function of the R package unmarked (Fiske & Chandler, 2011). We assessed model fit for the full model using goodness of fit test based on Pearson $\chi^2$ and parameter bootstrapping with 10,000 samples, and inspecting under- or overdispersion (c, calculated by dividing the observed Chisq statistic by the mean of the statistics obtained from bootstrap samples), magnitude of parameter estimates and standard errors, and predicted values of the state variable at the sample locations (MacKenzie and Bailey 2004; Royle and Nichols 2016). For species with a suitable full model, we proceeded to create a model selection table with all combinations of covariates (32 models for species with linear effect of tree cover and 48 for species with quadratic effect of tree cover), ranked models according to information criteria corrected for small sample size (AICc if c1or QAICc if c>1), and the corresponding  delta(Q)AICc and model weights.
+
+We assessed the relative importance of each detection and occupancy covariate by calculating the sum of weights of the model containing that variable (Burnham and Anderson 2002; Symonds and Moussalli 2011). Values range from zero to one indicating increasing levels of support, and we use an informal scale to describe the level of support as very strong (>0.9), strong (0.6 - 0.9), moderate (0.3 - 0.6) and low (<0.3). We further calculated model averaged coefficients and predictions of the state variable ($\lambda$)  based on the subset of models with $\delta(Q)AICc \leq 10$ (Burnham et al 2011; Mazerolle 2020). In case of overdispersion (c>1) we assumed the lack of fit is due to unaccounted sources of error and used the value of c to inflate the standard errors and confidence intervals. For underdispersed models (c1), no modification to standard errors or intervals was made, but consider these as conservative assessments of uncertainty (Kery and Royle 2019).
+
+Selection of hunting localities
+
+To assess hunting behaviour of the Pemon we evaluated both the interview responses on vegetation type and season with contingency tables, and the spatial information on reported hunting sites with a logistic regression.
+We tabulated the number of interview responses from each community for the three levels of preferred hunting vegetation types (forest, savanna and mixed) and the two levels of hunting seasons (dry, and rainy season). We used the  (Chi-square) test to assess the significance of the relationship between variables.
+For the logistic regression we used the data collected during field work at 57 sites with cameras and fitted a logistic regression to the binomial hunting variable with formula:
+Eq 5 $logit(hunting) ~ \beta_0 + \beta_1 tree_buffer + \beta_2 dist_conuco$
+
+
+# notes on the occu RN model
+Kery and Royle 2016:
+
+> The RN model may be useful to estimate abundance from replicated measurements of presence/absence, to accommodate detection heterogeneity when focusing on occupancy (Dorazio,2007) or to link occupancy data with abundance data in an integrated model (Conroy et al., 2008)
+
+> In practice, the RN model has not been extensively used to actually estimate abundance. Arguably, it is more sensitive to parametric assumptions and it will fail when abundance and/or detection are high. Moreover, adopting mixture distributions other than the Poisson, such as the NB, leads to unstable estimates and often also to biologically unreasonably high estimates for abundanceHence, the RN model may be most useful as an occupancy model that accounts for part of the site-specific heterogeneity in detection (Dorazio, 2007) or in integrated models to link occupancy data with data that are directly informative about abundance (Conroy et al., 2008). Note also that Yamaura et al. (2011) have used it as the basis for their community models (Chapter 11).

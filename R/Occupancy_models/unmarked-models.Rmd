@@ -352,6 +352,18 @@ theme(axis.text.x = element_text( size = 7, hjust = .5, vjust=.5, face = "italic
 # ggsave("Fig-abundance-hunting-not-reported.png",width=8,height=5)
 
 ```
+Logistic regression:
+
+```{r}
+dts <- subset(camaras,bloque %in% sprintf("B%02i",1:6))
+ss <- duplicated(dts$grid)
+bsq <- dts$buf.fragmen[!ss]/100
+dcon <- dts$dcon[!ss]/1000
+y <- factor(dts$caza.celda[!ss]>0)
+mdl <- glm(y~bsq+dcon,family=binomial)
+summary(mdl)
+
+```
 
 ## results per species
 
@@ -406,6 +418,15 @@ ggplot(dtf, aes(x=wcon, y=prd,colour=factor(caza))) +
     ggplot(dtf, aes(x=bsq, y=prd,colour=factor(caza))) +
       geom_errorbar(aes(ymin=prd-se, ymax=prd+se), colour="grey", width=0.025) +
         geom_point() + xlab("bosque") + ylab("Predicted values") + labs(colour='Hunting')
+
+
+        event.data %>% mutate(sessions=cut(fecha,breaks=visits,label=as.character(visits)[-1])) %>% group_by(cdg,sessions) %>% summarise(value=sum(number.of.animals)) %>% ggplot(aes(x=sessions,y=cdg)) +
+        geom_raster(aes(fill=value)) +
+          scale_fill_gradient(low="grey90", high="red") +
+          labs(x="visits", y="cameras", title="Individuals recorded") +
+          theme_bw() + theme(axis.text.x=element_text(size=9, angle=0, vjust=0.3),
+                             axis.text.y=element_text(size=9),
+                             plot.title=element_text(size=11))
 
 ```
 `
