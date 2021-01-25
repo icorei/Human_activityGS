@@ -111,7 +111,8 @@ cam.data %>% select(bloque,grp) %>% table()
 
 Previous analysis suggested that most mammal species in the study area are associated with forest habitat and few are associated with shrubs or savanna (Stachowicz et al. 2020). We used mean tree cover (in percentage) as a quantitative variable correlated with these habitat types and consistent with metrics used for the sampling design.  Mean tree cover was calculated from remote sensing products (Hansen et al. 2003) using a 1 km buffer around the camera location, the variable has a bimodal distribution with a lower mode at 10-20% corresponding with the savanna, a higher mode at 70-80% corresponding with forest and intermediate values roughly corresponding with the less common shrub habitat.
 
-These groups have different values of tree cover and vegetation indices estimated from remote sensors
+These groups have different values of tree cover and vegetation indices estimated from remote sensors. We tested buffers with different radii. A $1 km$ radius is wide enough to represent the area of the most abundant game species home range (Cuniculus paca 2 - 3 ha, Jorge and Peres 2005; Dasyprocta leporina 3.4 - 1.6 ha, Benavides et al. 2017) and narrow enough to maintain variability in tree cover within the scale of a camera trapping site (Scotsont et al 2017). Increasing the radius implies more homogenous values and overlap between habitat types.
+
 
 ```{r}
 dat.m <- melt(cam.data,id.vars='grp', measure.vars=c('tree_0500m','tree_1000m','tree_2500m','tree_5000m'))
@@ -219,7 +220,6 @@ labs(y="Distance (m)", x="Forest cover (%)",colour="Hunting")
 
 ### Signs of animal activity
 
-
 We also recorded direct observations and indirect evidence (scats, tracks, scratches on trees, burrows, etc) of animal presence along the routes walked during field work, and recorded their coordinates with GPS. We had a total of n=159 records during 29 days of camera deployment and maintenance, with a mean of 16.8 km walked each day.
 
 ```{r}
@@ -236,6 +236,7 @@ summary(walk.effort$x)
 ```
 
 We would expect that detection will be higher near areas of more animal activity. We calculate density of animal observations and tracks as $g(u) = (sum of w[i] )$ where the the weights are the inverse p-th powers of distance, $ w[i] = 1/d(u,x[i])^p$ where d(u,x[i]) is the Euclidean distance from u to x[i].
+
 
 ```{r}
 drastros <- pointDistance(subset(eventos,camara %in% "RAS")[,c("long","lat")], cam.data[,c("lon","lat")], lonlat=TRUE)
@@ -367,10 +368,20 @@ where $r_{ij}$ is the detection probability of a single individual. Repeated vis
 In order to build detection histories for species recorded during the camera trap survey, we considered each camera location as a “site” ($i$; 57 in total). We divided the total sampling period of 180 days into several ‘‘visits’’ ($j$). Here we use a visit duration of 21 days.
 
 
+Covariates of $N_i$ (site covariates) and $p_{ij}$ (observation covariates) were modeled using the logit link.
+
+
+To test our hypothesis we need a measure of influence of conucos while controlling for the influence of habitat on species abundance, and the spatial and temporal heterogeneity in probability of detection.
+
+We explored several covariates with alternative parameterizations to ensure best possible model fit given the restricted sample size and low number of detection for some species.
 
 ### Formatting input
 
-Now we arrange all data into a `unmarkedFrameOccu` object, we start with the detection history and observation covariates:
+Now we arrange all data into a `unmarkedFrameOccu` object, we start with the detection history and observation covariates. Sampling date (date) was recorded as the number of days since the start of sampling (21 September 2015) to the beginning of the “visit” and rescaled between -1 and 1.
+
+Sampling effort (effort) was calculated as the number of days the camera remained active divided by the duration of the visit. Thus, effort was always $\leq 1$, and was set to empty value (NA) when the camera was not present or inoperative during the whole duration of the visit.
+
+
 
 ```{r}
 ## Detection history
@@ -385,24 +396,39 @@ x <- seq(-1,1,length=ncol(obs))
 obsDate <- matrix(rep(x,nrow(obs)),nrow=nrow(obs),byrow=T)
 ```
 
-Now the site covariates:
+Now the site covariates. As site covariates we consider the following:
+
+* Sampling design covariates: _block_, fragmentation index _H_ and proportion of forest _h_
+* Tree cover (_tree_xxxx_)percentage around the camera trap using different buffer sizes (500m, 1km, 2.5km and 5km)
+* NDVI at the camera location (_ndvi_),
+* Distance to nearest rivers (_drios_),
+* Influence of conucos (_dcon_: distance to nearest or _wcon_: density of conucos)
+* Influence of communities (distance to nearest, _dcom_),
+* Influence of any human activity (distance to nearest community or conuco, _dhum_)
+* Track density (_dras_; this one is used as a spatial covariate of detectability)
+
 
 ```{r}
 sC <- data.frame(cam.data[match(rownames(obs),cam.data$cdg),
    c("bloque","H","h","dcon","dcom","wcon",
       "dhum","tree_0500m","tree_1000m","tree_2500m","tree_5000m","drios","ndvi","grp","dras","hunting")])
 sC$bloque <- droplevels(sC$bloque)
-## we select all camaras up to 5km from the conucos
-ss <- sC$dcon<5000
 
 ```
 
-We will standardize some variables:
+The continuous variables were standardized to zero mean and unit standard deviation:
 
 ```{r}
 for (k in c("H","h","dcon","dras","ndvi","tree_0500m","tree_1000m","tree_2500m","tree_5000m","drios","dcom","wcon","dhum")) {
    sC[,k] <- (sC[,k]-mean(sC[,k]))/sd(sC[,k])
 }
+```
+
+We select all camaras up to 5km from the conucos with total duration of at least one week
+
+ ```{r}
+ ss <- rownames(obs) %in% subset(cam.data,duration>7 & dcon<5000)$cdg
+ table(ss)
 ```
 
 Now everything together:
@@ -415,7 +441,7 @@ UMF <- unmarkedFrameOccu((obs[ss,]>0)+0,
 ```
 
 
-### Explore alternative models
+### Build the model: covariates of detection
 
 First we check all possible combinations of covariates for detectability for a fixed null model of abundance:
 
@@ -435,67 +461,71 @@ if (!exists("all.combs.2"))
   sw(all.combs.2)
 
 ```
-... and found a similar result for _effort_, but less support for _H_ or _h_.
+... and found a similar result for _effort_, but better support for _dras_ and _date_.
 
-The best ranking models include both _effort_ and _H_, but there are other combinations with similar value of AIC.
+The best ranking models include those three variables:
 
 ```{r}
-subset(all.combs.1,delta < 2)
 subset(all.combs.2,delta < 2)
 ```
 
-In order to compare the covariates of abundance, we take a slightly different approach, given the high correlation between variables related to habitat type and vegetation:
+Given these results, we selected sampling date, sampling effort (camera/day), and density of direct and indirect off-camera records to account for spatial and temporal heterogeneity in detectability (Cubaynes et al., 2010, REFs).
+
+### Build the model: covariates of abundance
+
+In order to compare the covariates of abundance, we take a slightly different approach, given the high correlation between variables related to habitat type and vegetation. We compare alternative models avoiding duplicate variables:
 
 ```{r}
 mdls <- list(
-   "H+h" = occuRN(~ date+sfrz+H ~ H+h, UMF,K=50),
-   "H+h+habitat" = occuRN(~ date+sfrz+H ~ H+h+grp, UMF,K=50),
-   "H+h+treecover 500m" = occuRN(~ date+sfrz+H ~ H+h+tree_0500m, UMF,K=50),
-   "H+h+treecover 1k" = occuRN(~ date+sfrz+H ~ H+h+tree_1000m, UMF,K=50),
-   "H+h+treecover 2,5k" = occuRN(~ date+sfrz+H ~ H+h+tree_2500m, UMF,K=50),
-   "H+h+treecover 5k" = occuRN(~ date+sfrz+H ~ H+h+tree_5000m, UMF,K=50),
-   "H+h+ndvi" = occuRN(~ date+sfrz+H ~ H+h+ndvi, UMF,K=50),
-   "habitat" =  occuRN(~ date+sfrz+H ~ grp, UMF,K=50),
-   "treecover 500m" = occuRN(~ date+sfrz+H ~ tree_0500m, UMF,K=50),
-   "treecover 1k" = occuRN(~ date+sfrz+H ~ tree_1000m, UMF,K=50),
-   "treecover 2.5k" = occuRN(~ date+sfrz+H ~ tree_2500m, UMF,K=50),
-   "treecover 5k" = occuRN(~ date+sfrz+H ~ tree_5000m, UMF,K=50),
-   "ndvi" = occuRN(~ date+sfrz+H ~ ndvi, UMF,K=50)
+   "H+h" = occuRN(~ date+sfrz+dras~ H+h, UMF,K=50),
+   "H+h+habitat" = occuRN(~ date+sfrz+dras~ H+h+grp, UMF,K=50),
+   "H+h+treecover 500m" = occuRN(~ date+sfrz+dras~ H+h+tree_0500m, UMF,K=50),
+   "H+h+treecover 1k" = occuRN(~ date+sfrz+dras~ H+h+tree_1000m, UMF,K=50),
+   "H+h+treecover 2,5k" = occuRN(~ date+sfrz+dras~ H+h+tree_2500m, UMF,K=50),
+   "H+h+treecover 5k" = occuRN(~ date+sfrz+dras~ H+h+tree_5000m, UMF,K=50),
+   "H+h+ndvi" = occuRN(~ date+sfrz+dras~ H+h+ndvi, UMF,K=50),
+   "habitat" =  occuRN(~ date+sfrz+dras~ grp, UMF,K=50),
+   "treecover 500m" = occuRN(~ date+sfrz+dras~ tree_0500m, UMF,K=50),
+   "treecover 1k" = occuRN(~ date+sfrz+dras~ tree_1000m, UMF,K=50),
+   "treecover 2.5k" = occuRN(~ date+sfrz+dras~ tree_2500m, UMF,K=50),
+   "treecover 5k" = occuRN(~ date+sfrz+dras~ tree_5000m, UMF,K=50),
+   "ndvi" = occuRN(~ date+sfrz+dras~ ndvi, UMF,K=50)
 )
 
 aictab(mdls,second.ord=T)
 ```
 
-Model with NDVI or tree cover at 1km are slightly better than other alternatives.
+Model with tree cover at 1km is slightly better than other alternatives.
 
 Now rivers:
 ```{r}
 mdls <- list(
-   "treecover 500m" = occuRN(~ date+sfrz+H ~ tree_0500m, UMF,K=50),
-   "treecover 1k" = occuRN(~ date+sfrz+H ~ tree_1000m, UMF,K=50),
-   "treecover 2.5k" = occuRN(~ date+sfrz+H ~ tree_2500m, UMF,K=50),
-   "treecover 5k" = occuRN(~ date+sfrz+H ~ tree_5000m, UMF,K=50),
-   "treecover 500m + rios" = occuRN(~ date+sfrz+H ~ tree_0500m+drios, UMF,K=50),
-   "treecover 1k + rios" = occuRN(~ date+sfrz+H ~ tree_1000m+drios, UMF,K=50),
-   "treecover 2.5k + rios" = occuRN(~ date+sfrz+H ~ tree_2500m+drios, UMF,K=50),
-   "treecover 5k + rios" = occuRN(~ date+sfrz+H ~ tree_5000m+drios, UMF,K=50)
+   "treecover 500m" = occuRN(~ date+sfrz+dras~ tree_0500m, UMF,K=50),
+   "treecover 1k" = occuRN(~ date+sfrz+dras~ tree_1000m, UMF,K=50),
+   "treecover 2.5k" = occuRN(~ date+sfrz+dras~ tree_2500m, UMF,K=50),
+   "treecover 5k" = occuRN(~ date+sfrz+dras~ tree_5000m, UMF,K=50),
+   "treecover 500m + rios" = occuRN(~ date+sfrz+dras~ tree_0500m+drios, UMF,K=50),
+   "treecover 1k + rios" = occuRN(~ date+sfrz+dras~ tree_1000m+drios, UMF,K=50),
+   "treecover 2.5k + rios" = occuRN(~ date+sfrz+dras~ tree_2500m+drios, UMF,K=50),
+   "treecover 5k + rios" = occuRN(~ date+sfrz+dras~ tree_5000m+drios, UMF,K=50)
 )
 
 aictab(mdls,second.ord=T)
 ```
 
-Slightly better with rios...
+Rivers do not improve the fit (at least for this species) .
+
 
 Models for all different measures of human influence (conuco density, distance, distance to communities and combined conuco/community distance) provide very similar results when using one variable at a time.
 
 ```{r}
-fm11 <- occuRN(~ date+sfrz+H ~ tree_1000m+dcom, UMF,K=50)
-fm12 <- occuRN(~ date+sfrz+H ~ tree_1000m+dcon, UMF,K=50)
-fm13 <- occuRN(~ date+sfrz+H ~ tree_1000m+wcon, UMF,K=50)
-fm14 <- occuRN(~ date+sfrz+H ~ tree_1000m+dhum, UMF,K=50)
-fm15 <- occuRN(~ date+sfrz+H ~ tree_1000m+dcon+dcom, UMF,K=50)
-fm16 <- occuRN(~ date+sfrz+H ~ tree_1000m+dcon+wcon, UMF,K=50)
-fm17 <- occuRN(~ date+sfrz+H ~ tree_1000m+dcon*wcon, UMF,K=50)
+fm11 <- occuRN(~ date+sfrz+dras~ tree_1000m+dcom, UMF,K=50)
+fm12 <- occuRN(~ date+sfrz+dras~ tree_1000m+dcon, UMF,K=50)
+fm13 <- occuRN(~ date+sfrz+dras~ tree_1000m+wcon, UMF,K=50)
+fm14 <- occuRN(~ date+sfrz+dras~ tree_1000m+dhum, UMF,K=50)
+fm15 <- occuRN(~ date+sfrz+dras~ tree_1000m+dcon+dcom, UMF,K=50)
+fm16 <- occuRN(~ date+sfrz+dras~ tree_1000m+dcon+wcon, UMF,K=50)
+fm17 <- occuRN(~ date+sfrz+dras~ tree_1000m+dcon*wcon, UMF,K=50)
 
 aictab(list(fm11,fm12,fm13,fm14,fm15,fm16,fm17),
 modnames=c("comunity","conuco (dist)","conuco (dens)","comunity/conuco combined","comunity + conuco","conuco (dist+dens)","conuco (dist*dens)"),second.ord=T)
@@ -507,29 +537,55 @@ Distance to conuco is slightly  better than other measures, but there is a stron
 cor.test(cam.data$dcon,cam.data$tree_1000m)
 ```
 
-While distance to community is not:
+
+## Goodness of fit test
+
+Finally we decided to fit a full model including the three observation covariates (p (date + effort + tracks_dens)) and the two site covariates ($\lambda$(tree_buffer + tree_buffer2 + dist_conuco)) using the occuRN function of the R package unmarked (Fiske & Chandler, 2011).
+
+
 ```{r}
-cor.test(cam.data$dcom,cam.data$tree_1000m)
+(fm01 <- occuRN(~ dras+sfrz+date ~ tree_1000m+dcon+drios, UMF,K=50))
+```
+
+Since a couple of species might be associated with shrub habitat with intermediate values of tree cover (Stachowicz et al. 2020) it could be desirable to add a quadratic term for tree cover to the model.
+
+```{r}
+(fm03 <- occuRN(~ dras+sfrz+date ~ tree_1000m+I(tree_1000m^2)+dcon+drios, UMF,K=50))
+```
+
+In this case the quadratic terms does not seem to be informative:
+```{r}
+AICc(fm01)
+AICc(fm03)
+```
+
+ We assessed model fit for the full model using goodness of fit test based on Pearson $\chi^2$ and parameter bootstrapping with 10,000 samples, and inspecting under- or overdispersion ($\hat{c}$, calculated by dividing the observed Chisq statistic by the mean of the statistics obtained from bootstrap samples), magnitude of parameter estimates and standard errors, and predicted values of the state variable at the sample locations (MacKenzie and Bailey 2004; Royle and Nichols 2016).
+
+
+```{r}
+nsim.val <- 100#00
+if (!exists("ts01"))
+  ts01 <- mb.gof.test(fm01,nsim=nsim.val,maxK=50,parallel = TRUE)
+ts01
+```
+
+For this species the model seem to be a good fit with no sign of over-dispersion. The estimate of $\hat{c}$ is well below 1, which might point to some degree of under-dispersion. I suspect this might be due to the heterogeneity in the sampling effort between cameras, with some cameras having very short periods with repeated visits. General practice is to ignore under-dispersion in model predictions (as long as it is not very extreme), and consider uncertainty estimates (standard deviation and confidence intervals) as rather conservative.
+
+```{r}
+(oms01 <- dredge(fm01,rank="AICc"))
+sw(oms01)
+
+mavg01 <- model.avg(oms01, subset = delta < 10,fit=T)
+summary(mavg01)
+ cbind(coef(mavg01),confint(mavg01))
+
+prd <-  predict(mavg01,type='state')
+ggplot(data=UMF@siteCovs,aes(x=tree_1000m,y=dcon,size=prd$fit,colour=prd$se.fit)) +
+geom_point()
 
 ```
 
-
-For this study we calculated tree cover and distance to nearest conuco as covariates of species abundance.
-
-
-
-
-
-Covariates of Ni (site covariates) and pij (observation covariates) were modeled using the logit link.
-
-
-To test our hypothesis we need a measure of influence of conucos while controlling for the influence of habitat on species abundance, and the spatial and temporal heterogeneity in probability of detection. We explored several covariates with alternative parameterizations to ensure best possible model fit given the restricted sample size and low number of detection for some species, (see Suppl. Material for details). As site covariates we used tree cover percentage around the camera trap (tree_buffer) and distance to nearest conuco (dist_conuco), both variables were standardized to zero mean and unit standard deviation. We used 1 km radius under the assumption that it is wide enough to represent the area of the most abundant game species home range (Cuniculus paca 2 - 3 ha, Jorge and Peres 2005; Dasyprocta leporina 3.4 - 1.6 ha, Benavides et al. 2017) and narrow enough to maintain variability in tree cover within the scale of a camera trapping site (Scotsont et al 2017). Since a couple of species might be associated with shrub habitat with intermediate values of tree cover (Stachowicz et al. 2020) we added a quadratic term (tree_buffer2) to their models.
-
-We used sampling date, sampling effort (camera/day), and density of direct and indirect off-camera records to account for spatial and temporal heterogeneity in detectability (Cubaynes et al., 2010, REFs). Sampling date (date) was recorded as the number of days since the start of sampling (21 September 2015) to the beginning of the “visit” and  standardized to zero mean and unit standard deviation. Sampling effort (effort) was calculated as the number of days the camera remained active divided by the duration of the visit. Thus, effort was always $\leq 1$, and was set to empty value (NA) when the camera was not present or inoperative during the whole duration of the visit.  We calculated tracks density (tracks_dens) as the inverse distance weighted sum of wildlife activity recorded off-camera (direct observations and indirect evidence of animal presence during field-work):
-Eq. 4 track_densi = j=1k1/dijp ,
-where dij is the distance between camera i and record j for all k = 159 records, and p = 0.25. The result was standardized to zero mean and unit standard deviation.
-
-For each species, we fitted a full model including the three observation covariates (p (date + effort + tracks_dens)) and the two site covariates ($\lambda$(tree_buffer + tree_buffer2 + dist_conuco)) using the occuRN function of the R package unmarked (Fiske & Chandler, 2011). We assessed model fit for the full model using goodness of fit test based on Pearson $\chi^2$ and parameter bootstrapping with 10,000 samples, and inspecting under- or overdispersion (c, calculated by dividing the observed Chisq statistic by the mean of the statistics obtained from bootstrap samples), magnitude of parameter estimates and standard errors, and predicted values of the state variable at the sample locations (MacKenzie and Bailey 2004; Royle and Nichols 2016). For species with a suitable full model, we proceeded to create a model selection table with all combinations of covariates (32 models for species with linear effect of tree cover and 48 for species with quadratic effect of tree cover), ranked models according to information criteria corrected for small sample size (AICc if c1or QAICc if c>1), and the corresponding  delta(Q)AICc and model weights.
+ For species with a suitable full model, we proceeded to create a model selection table with all combinations of covariates (32 models for species with linear effect of tree cover and 48 for species with quadratic effect of tree cover), ranked models according to information criteria corrected for small sample size (AICc if c1or QAICc if c>1), and the corresponding  delta(Q)AICc and model weights.
 
 We assessed the relative importance of each detection and occupancy covariate by calculating the sum of weights of the model containing that variable (Burnham and Anderson 2002; Symonds and Moussalli 2011). Values range from zero to one indicating increasing levels of support, and we use an informal scale to describe the level of support as very strong (>0.9), strong (0.6 - 0.9), moderate (0.3 - 0.6) and low (<0.3). We further calculated model averaged coefficients and predictions of the state variable ($\lambda$)  based on the subset of models with $\delta(Q)AICc \leq 10$ (Burnham et al 2011; Mazerolle 2020). In case of overdispersion (c>1) we assumed the lack of fit is due to unaccounted sources of error and used the value of c to inflate the standard errors and confidence intervals. For underdispersed models (c1), no modification to standard errors or intervals was made, but consider these as conservative assessments of uncertainty (Kery and Royle 2019).
 
@@ -539,6 +595,7 @@ To assess hunting behaviour of the Pemon we evaluated both the interview respons
 We tabulated the number of interview responses from each community for the three levels of preferred hunting vegetation types (forest, savanna and mixed) and the two levels of hunting seasons (dry, and rainy season). We used the  (Chi-square) test to assess the significance of the relationship between variables.
 For the logistic regression we used the data collected during field work at 57 sites with cameras and fitted a logistic regression to the binomial hunting variable with formula:
 Eq 5 $logit(hunting) ~ \beta_0 + \beta_1 tree_buffer + \beta_2 dist_conuco$
+
 
 
 # notes on the occu RN model
