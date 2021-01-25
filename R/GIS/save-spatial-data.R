@@ -33,10 +33,13 @@ if (file.exists(GIS.data)) {
 
 
    # unzip shapefiles from local repository to working directory
+   unzip(sprintf("%s/input/sampling/rios_WGS.zip",script.dir))
    unzip(sprintf("%s/input/sampling/conucos.zip",script.dir))
    unzip(sprintf("%s/input/sampling/comunidades_GS.zip",script.dir))
       ## read both grids and join them
    conucos <- shapefile("conucos.shp")
+   rios <- shapefile("rios_WGS.shp")
+
    comunidades <- shapefile("comunidades.shp")
    obj.list <- c(obj.list,"conucos","comunidades")
    save(file=GIS.data,list=obj.list)
@@ -64,6 +67,9 @@ if (file.exists(GIS.data)) {
 
    if (!inMemory(fbsq))
     fbsq <- readAll(fbsq)
+
+    ## no es util para esta escala
+    ##rW <- raster("v1.1/GSW_v1.1_occurrence.tif")
 
 
     r1 <- aggregate(r0,10)
@@ -303,4 +309,21 @@ for (aa in archs) {
   #boxplot(camaras$ndvi.mu~camaras$grp)
 
   #boxplot(camaras$buf.fragmen~camaras$grp)
+  save(file=GIS.data,list=obj.list)
+
+# treecover at different buffer sizes
+  camaras$tree_0500m <- unlist(lapply(extract(vbsq,camaras[,c("lon","lat")],buffer=500),mean))
+  camaras$tree_1000m <- unlist(lapply(extract(vbsq,camaras[,c("lon","lat")],buffer=1000),mean))
+  camaras$tree_2500m <- unlist(lapply(extract(vbsq,camaras[,c("lon","lat")],buffer=2500),mean))
+  camaras$tree_5000m <- unlist(lapply(extract(vbsq,camaras[,c("lon","lat")],buffer=5000),mean))
+
+ #distance to rivers:
+camaras.ll <- camaras
+coordinates(camaras.ll) <- c("lon","lat")
+proj4string(camaras.ll) <- "+proj=longlat +datum=WGS84 +no_defs"
+camaras.xy <- spTransform(camaras.ll,"+proj=utm +zone=20n")
+ rios.xy <- spTransform(rios,"+proj=utm +zone=20n")
+camaras$drios <- distance(rios.xy,camaras.xy)
+
+
   save(file=GIS.data,list=obj.list)

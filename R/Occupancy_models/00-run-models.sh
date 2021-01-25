@@ -13,6 +13,8 @@ require(knitr)
 script.dir <- Sys.getenv("SCRIPTDIR")
 mi.arch <- sprintf("%s/R/Occupancy_models/unmarked-models.Rmd",script.dir)
 mi.arch <- sprintf("%s/R/Occupancy_models/supplementary-methods.Rmd",script.dir)
+knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE)
+
 rmarkdown::render(mi.arch,"all")
 
 
