@@ -6,6 +6,7 @@ require(chron)
 require(raster)
 require(cluster)
 require(MuMIn)
+require(dplyr)
 
 ## ubicación de la carpeta de trabajo y el repositorio local
 
