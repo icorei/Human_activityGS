@@ -1,0 +1,735 @@
+---
+title: "Test of garden hunting hypothesis for mammals in La Gran Sabana, Venezuela using occupancy models"
+author: "Stachowicz, I; Ferrer-Paris, J.R.; Sanchez-Mercado, A. (in prep)"
+date: December 2, 2020
+output: pdf_document
+---
+```{r setup, include=FALSE}
+require(unmarked)
+require(AICcmodavg)
+require(chron)
+require(raster)
+require(cluster)
+require(MuMIn)
+require(dplyr)
+require(ggplot2)
+require(reshape2)
+
+require(grid)
+
+
+if (Sys.getenv("WORKDIR") == "") {
+   ## for Izza:
+   work.dir <- "D:/PROJECTS/Gran Sabana/Metodologia"
+   script.dir <- "???"
+} else {
+   ## for JR:
+   work.dir <- Sys.getenv("WORKDIR")
+   script.dir <- Sys.getenv("SCRIPTDIR")
+}
+
+setwd(work.dir)
+GIS.data <- sprintf("%s/Rdata/GIS.rda",script.dir)
+load(GIS.data)
+
+```
+
+```{r, echo=FALSE,eval=TRUE }
+if (!exists("tbl1")) {
+  tbl1 <- data.frame()
+  for (arch in dir(sprintf("%s/Rdata/occuRN/",script.dir))) {
+    load(sprintf("%s/Rdata/occuRN/%s",script.dir,arch))
+  mi.spp <- sub(".rda$","",arch)
+  UMF <- get(sprintf("UMF.%s",mi.spp))
+  ts03 <- get(sprintf("ts03.%s",mi.spp))
+  fm01 <- get(sprintf("fm01.%s",mi.spp))
+  fm03 <- get(sprintf("fm03.%s",mi.spp))
+
+   tbl1 <- rbind(tbl1,data.frame(species=mi.spp,
+   n.detect= sum(UMF@y,na.rm=T),
+  ts03[c("chi.square","p.value","c.hat.est")],
+  large.coefs=min(max(abs(coef(fm01))),max(abs(coef(fm03)))),
+  large.SE=min(max(SE(fm01)),max(SE(fm03)))))
+
+  }
+  tbl1 %>% mutate(overdispersion=c.hat.est > 1 & c.hat.est <4, coef.problems=large.coefs>4 | large.SE>4) %>%
+    mutate(lack.of.fit=p.value<.10 | p.value > .9 | c.hat.est > 4 | c.hat.est <0.30 ) -> tbl1
+
+}
+
+
+camaras %>% filter(bloque %in% sprintf("B%02i",1:6)) %>%
+  mutate(bloque=droplevels(bloque),
+    fecha1 = chron(dates.=as.character(fecha.act), times.=as.character(hora.act),
+      format = c(dates = "y-m-d", times = "h:m:s")),
+    fecha2 = chron(dates.=as.character(fecha.desact.real),
+    times.=as.character(hora.desact.real),
+      format = c(dates = "y-m-d", times = "h:m:s")),
+    cdg = as.character(ID.original)) %>%
+  group_by(cdg) %>%
+  summarise(lat=mean(lat), lon=mean(lon), bloque=unique(bloque),
+    hunting=unique(factor(caza.celda>0)), grp=unique(grp), H=mean(H), h=mean(h),
+    tree_0500m=mean(tree_0500m), tree_1000m=mean(tree_1000m),
+    tree_2500m=mean(tree_2500m), tree_5000m=mean(tree_5000m),
+    drios=mean(drios), bsq=mean(buf.fragmen), ndvi=mean(ndvi.mu),
+    fecha1=min(fecha1), fecha2=max(fecha2)) %>%
+  mutate(duration=as.numeric(fecha2-fecha1)) ->
+    cam.data
+
+    d1 <- pointDistance(cam.data[,c("lon","lat")],
+       coordinates(conucos)[,1:2], lonlat=T, allpairs=T)
+
+    cam.data$dcon <- apply(d1,1,min)
+
+    d1 <- pointDistance(cam.data[,c("lon","lat")],
+      coordinates(comunidades), lonlat=T, allpairs=T)
+
+    cam.data$dcom <- apply(d1,1,min)
+
+```
+
+
+
+# Results of latent abundance models for 29 species detected in camera trap surveys
+
+We attempted modelling the abundance of 29 species detected during the camera trap survey. These species were detected in at least two different occasions:
+
+```{r }
+eventos %>% group_by(species) %>% summarise(nr.events=n(),nr.fotos=sum(fotos),max.nr.individuals=max(number.of.animals,na.rm=T)) %>% arrange(nr.events) %>% print.AsIs()
+```
+
+Here one event was defined as a sequence of consecutive photographs from a single camera. For most species each event recorded a single individual, but in some species pairs or small groups could be capture in a single event.
+
+The RN model uses data from detection history matrix, where each row represents a "site" (camera location) and each column represents a time unit or "visit". This means we need to divide the period of camera activity into time units of fixed duration. Each entry in the matrix consist of a 0 for non-detection or a 1 for detection (or empty values if the camera was not active during a giving time unit).
+
+This format of detection histories does do not use information on the number of indivuals per detection event, or number of independent detections events per time units (for example two events in following days within a time unit count as a single detection).
+
+Thus the effective number of detections for modeling species anundance will depend on how these events are distributed among different cameras and time units.
+
+## Species with few effective detections
+
+Fitted models for species with only two effective detections among the 54 camara traps selected for the analysis showed clear signs of lack of fit:
+* MacKenzie and Bailey Goodness-of-fit Test with p-values <0.05,
+* estimate of c-hat (overdispersion) >> 1
+* large or very large values in coefficients estimates
+
+```{r}
+tbl1 %>% filter(n.detect<5) %>% select(1:5)
+
+```
+
+Species with 5 to 10 effective detections among the 54 camara traps performed better on the Goodness of fit test, but still had problems with very large or unrealistic values in coefficients estimates, and were also discarded.
+
+```{r}
+tbl1 %>% filter(n.detect>=5 & n.detect <10) %>% select(1:5)
+```
+
+So we focus the analysis on 15 species with at least 11 effective detections.
+
+
+## Results for each species
+
+```{r,echo=FALSE}
+with.quad.term <- c('E.barbara','L.rufaxilla','T.tetradactyla','C. alector') # ?
+
+```
+
+### D.imperfecta
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "D.imperfecta"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+### P.onca
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "P.onca"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+### M.tridactyla
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "M.tridactyla"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+
+### L.pardalis
+
+No sign of lack of fit, c-hat > 1 overdispersion (used to adjust standard errors )
+```{r}
+spp <- "L.pardalis"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+### E.barbara
+
+No sign of lack of fit, c-hat <1 : But prediction unrealistic (too high)
+```{r}
+spp <- "E.barbara"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+### D.novemcinctus
+
+No sign of lack of fit, c-hat > 1 overdispersion (used to adjust standard errors )
+```{r}
+spp <- "D.novemcinctus"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+### M.americana
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "M.americana"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average): [Check coefficients (too high?)]
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+
+
+### T.major
+
+No sign of lack of fit, c-hat values less than 1 (maybe too low?)
+```{r}
+spp <- "T.major"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+
+### C.thous
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "C.thous"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+
+### D.kappleri
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "D.kappleri"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+
+### C.alector
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "C.alector"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+
+### L.rufaxilla
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "L.rufaxilla"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+### M.gouazoubira
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "M.gouazoubira"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+
+### D.leporina
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "D.leporina"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+
+### C.paca
+
+No sign of lack of fit, c-hat values less than 1
+```{r}
+spp <- "C.paca"
+mod <- ifelse(spp %in% with.quad.term,"03","01")
+
+ tbl1 %>% filter(species %in% spp) %>% select(1:5)
+```
+
+Most support for variables:
+
+```{r }
+sw(get(sprintf("oms%s.%s",mod,spp)))
+```
+
+Summary of model averaging estimates (use conditional average):
+```{r }
+summary(get(sprintf("mavg%s.%s",mod,spp)))
+```
+```{r }
+ss <- match(rownames(get(sprintf("UMF.%s",spp))@y),cam.data$cdg)
+prd <- predict(get(sprintf("mavg%s.%s",mod,spp)),type='state')
+dtf <- data.frame(fit=prd$fit, se.fit=prd$se.fit, hunting=cam.data[ss,"hunting"], dcon=cam.data[ss,"dcon"], tree_1000m=cam.data[ss,"tree_1000m"])
+ggplot(dtf, aes(y=dcon, x=tree_1000m,size=fit,colour=se.fit)) +
+    geom_point() + ylab("Distance to conucos  (m)") + xlab("Tree cover (% in 1km buffer)") +
+    labs(title=spp,size='Predicted values',colour='Prediction S.E.')
+```
+
+## Combining results from all species
+
+### Summary of support for all variables
+
+```{r }
+
+tbl1 %>% filter(n.detect>=10) %>% arrange(n.detect) %>% pull(species) -> spps
+
+ccs <- sws <- data.frame()
+for (spp in spps) {
+##  print(spp)
+  if (spp %in% with.quad.term) {
+    prb <- sw(get(sprintf("oms03.%s",spp)))
+    mavg <- get(sprintf("mavg03.%s",spp))
+  } else {
+    prb <- sw(get(sprintf("oms01.%s",spp)))
+    mavg <- get(sprintf("mavg01.%s",spp))
+  }
+  sws <- rbind(sws,data.frame(spp,var=names(prb),w=prb))
+
+  ccs <- rbind(ccs,data.frame(spp, coef(mavg,full=F),confint(mavg,full=F)))
+}
+
+
+
+```
+
+
+```{r}
+dts <- dcast(sws,spp~var,value.var="w")
+dts %>% select(spp,`p(sfrz)`, `p(dras)`, `p(date)`, `lam(tree_1000m)`, `lam(I(tree_1000m^2))`, `lam(dcon)`,`lam(drios)`)
+
+```
+
+
+### Hypothesis test: effect of conucos
+
+```{r}
+ccs  %>% filter(grepl('dcon',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full...F.) -> ss
+##ccs  %>% filter(grepl('drios',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full...F.) -> ss
+##ccs  %>% filter(grepl('tree_1000m',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full...F.) -> ss
+par(mar=c(4,8,3,1))
+plot(ss$coef.mavg.,1:nrow(ss),xlim=c(-3.8,3.8), pch=19,xlab=expression(hat(beta)),ylab='',axes=F,main='distance to nearest conuco')
+segments(ss$X2.5..,   1:nrow(ss),   ss$X97.5..,1:nrow(ss))
+axis(1)
+axis(2,1:nrow(ss),ss$spp,las=2,font=3)
+box()
+abline(v=0,lty=2,lwd=2,col=2)
+# dev.copy(png,file='Fig-coefficient-distance.png')
+# dev.off()
+```
+
+
+
+### Predicted abundance in hunting sites
+
+
+For all species reported as hunted (need to reorder plot, maybe exclude species with large uncertainty in prediction).
+
+```{r}
+
+
+Hv <- c('C.paca'=6.336,'C.alector'=4.630, 'D.leporina'=2.681, 'T.terrestris'=2.681,'T.major'=1.949, 'M.gouazoubira'=0.731,'M.americana'=0.731, 'D.kappleri'=0.244, 'D.novemcinctus'=0.244)
+mtz <- data.frame()
+
+for (k in spps[spps %in% names(Hv)]) {
+  if (spp %in% with.quad.term) {
+      mtz <- rbind(mtz,data.frame(species=k,abundance=predict(get(sprintf("mavg03.%s",k)),type='state')$fit,hunting=UMF@siteCovs$hunting))
+    } else {
+      mtz <- rbind(mtz,data.frame(species=k,abundance=predict(get(sprintf("mavg01.%s",k)),type='state')$fit,hunting=UMF@siteCovs$hunting))
+    }
+}
+
+#mtz$hunting <- ifelse(mtz$caza==1,'yes','no')
+#mtz$hunting <- ifelse(mtz$caza>0,'yes','no')
+
+# text_Hv1 <- textGrob(sprintf("(%s)",Hv[1]), gp=gpar(fontsize=7))
+# text_Hv2 <- textGrob(sprintf("(%s)",Hv[2]), gp=gpar(fontsize=7))
+# text_Hv3 <- textGrob(sprintf("(%s)",Hv[3]), gp=gpar(fontsize=7))
+# text_Hv4 <- textGrob(sprintf("(%s)",Hv[4]), gp=gpar(fontsize=7))
+# text_Hv5 <- textGrob(sprintf("(%s)",Hv[5]), gp=gpar(fontsize=7))
+# text_Hv6 <- textGrob(sprintf("(%s)",Hv[6]), gp=gpar(fontsize=7))
+# text_Hv8 <- textGrob(sprintf("(%s)",Hv[8]), gp=gpar(fontsize=7))
+
+# grouped boxplot
+ggplot(mtz %>% filter(), aes(x=species, y=abundance, fill=hunting)) +
+    geom_boxplot(notch=F) + # or notch=T
+    labs(title="Model prediction of abundance at sites with and without hunting") +
+    labs(y=expression( hat(lambda)), x="",caption="Species (Hv values)") +
+    theme(axis.text.x = element_text( size = 7, hjust = .5, vjust=.5, face = "italic"),
+    plot.margin = unit(c(1,1,2,1), "lines")) +
+    coord_cartesian(clip="off")
+  # P +  annotation_custom(text_Hv1,xmin=1,xmax=1,ymin=-0.5,ymax=-0.5) +
+  # annotation_custom(text_Hv2,xmin=2,xmax=2,ymin=-0.5,ymax=-0.5) +
+  #  annotation_custom(text_Hv3,xmin=3,xmax=4,ymin=-0.5,ymax=-0.5) +
+  #   annotation_custom(text_Hv5,xmin=5,xmax=5,ymin=-0.5,ymax=-0.5) +
+  #   annotation_custom(text_Hv6,xmin=6,xmax=7,ymin=-0.5,ymax=-0.5) +
+  #   annotation_custom(text_Hv8,xmin=8,xmax=9,ymin=-0.5,ymax=-0.5)
+
+
+# vjust = c(.3,.3,.3,.7,.3,.7,.3,.3,.3,.3)
+## ggsave("Fig-abundance-hunting.png",width=8,height=5)
+# ggsave("Fig-abundance-hunting-with-notches.png",width=8,height=5)
+
+```
+
+Exclude M.tridactyla and E.barbara (predictions are unrealistic, too high).
+
+```{r}
+
+exc <- c('M.tridactyla','E.barbara')
+
+mtz <- data.frame()
+
+for (k in spps[!(spps %in% names(Hv)) & !(spps %in% exc)]) {
+  if (spp %in% c('C.alector','L.rufaxilla','T.tetradactyla')) {
+      mtz <- rbind(mtz,data.frame(species=k,abundance=predict(get(sprintf("mavg03.%s",k)),type='state')$fit,hunting=UMF@siteCovs$hunting))
+    } else {
+      mtz <- rbind(mtz,data.frame(species=k,abundance=predict(get(sprintf("mavg01.%s",k)),type='state')$fit,hunting=UMF@siteCovs$hunting))
+    }
+}
+
+# grouped boxplot
+ggplot(mtz %>% filter(), aes(x=species, y=abundance, fill=hunting)) +
+    geom_boxplot(notch=F) + # or notch=T
+    labs(title="Model prediction of abundance at sites with and without hunting") +
+    labs(y=expression( hat(lambda)), x="") +
+theme(axis.text.x = element_text( size = 7, hjust = .5, vjust=.5, face = "italic"))
+
+# ggsave("Fig-abundance-hunting-not-reported.png",width=8,height=5)
+
+```
+
+
+### Location of hunting sites
+
+Logistic regression (binomial glm) for reported hunting sites (hunting vs. no hunting) vs. habitat and conuco variables:
+
+```{r}
+mdl <- glm(hunting~tree_1000m+drios+dcom+dcon, data=cam.data,family=binomial)
+summary(mdl)
+
+```
