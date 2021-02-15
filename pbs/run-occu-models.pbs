@@ -9,7 +9,7 @@
 #PBS -M j.ferrer@unsw.edu.au
 #PBS -m ae
 
-source $HOME/proyectos/IVIC/Hunting_in_GS/env/load.sh
+source $HOME/proyectos/IVIC/Human_activityGS/env/load.sh
 
 cd $WORKDIR
 
