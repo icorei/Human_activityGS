@@ -1,16 +1,73 @@
+---
+title: "Shifting cultivation and hunting across the savanna-forest mosaic in the Gran Sabana, Venezuela"
+author: '@jrfep - @izolina - @adasanchez'
+date: "29/1/2021"
+---
+
 # Hunting in GS
-Abstract Overexploitation of bushmeat in tropical forests has increased in recent years, creating debate about the sustainability of current hunting rates. The Empty Forest hypothesis predicts that current hunting rates in tropical forests can lead to a widespread loss of biodiversity and a reduction in vertebrate abundance. Alternatively, the Garden Hunting hypothesis states that heterogeneous agroforestry landscapes maintain similar species richness as pristine forests, but with species composition dominated by savanna species. Here, we combined cameras trap surveys and spatially explicit dataset on Pemón indigenous hunting in mosaic of savanna and rainforest in the Gran Sabana, Venezuela. 
+
+This repository contains data and code for the scientific manuscript _Shifting cultivation and hunting across the savanna-forest mosaic in the Gran Sabana, Venezuela: Facing changes_ (under review)
+
+Abstract Overexploitation of bushmeat in tropical forests has increased in recent years, creating debate about the sustainability of current hunting rates. The Empty Forest hypothesis predicts that current hunting rates in tropical forests can lead to a widespread loss of biodiversity and a reduction in vertebrate abundance. Alternatively, the Garden Hunting hypothesis states that heterogeneous agroforestry landscapes maintain similar species richness as pristine forests, but with species composition dominated by savanna species. Here, we combined cameras trap surveys and spatially explicit dataset on Pemón indigenous hunting in mosaic of savanna and rainforest in the Gran Sabana, Venezuela.
 
 ## Repository structure
 
+* *R* folder: Contains code (R scripts) for analysis (model fit)
+* *Rdata* folder: Contains R-data files with the raw observations and spatial data
+* *pbs* folder: PBS job files for running the R-code on the Katana HPC @ UNSW
+* *documentation*: R-markdown files and PDF output describing the model fit and analysis
 
-### *R* folder
 
-Contains code (R scripts) for analysis and output figures in pdf
 
-#### References
+## Flujo de trabajo Katana @ UNSW
+
+El codigo ha sido desarrollado para correr el análisis en el cluster computacional de Katana ([Universidad de New South Wales](https://github.com/unsw-edu-au)).
+
+Enlaces a la documentación de Katana:
+* [Katana HPC](https://unsw-restech.github.io/index.html)
+* [Katana OnDemand](https://unsw-restech.github.io/using_katana/ondemand.html).
+
+En Linux he configurado la conexión a través de un terminal `bash` para reconocer el número de usuario (`zID`) y el uso de [identificación con una llave de SSH pública](https://www.ssh.com/ssh/public-key-authentication).
+
+Uso las herramientas `ssh` y `scp` para copiar los archivos a través del nodo *katana data mover* (kdm):
+
 
 ## Analysis in katana
+```sh
+ source ~/proyectos/IVIC/Hunting_in_GS/env/load.sh
+ cd $WORKDIR
+ nohup Rscript --vanilla $SCRIPTDIR/R/GIS/save-spatial-data.R &
+ ls -lah $SCRIPTDIR/Rdata
+
+ ##nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/occuRN-models.R &
+
+ source ~/proyectos/IVIC/Hunting_in_GS/env/load.sh
+ cd $WORKDIR
+
+ R --vanilla
+ require(knitr)
+ script.dir <- Sys.getenv("SCRIPTDIR")
+ mi.arch <- sprintf("%s/R/Occupancy_models/supplementary-methods-2.Rmd",script.dir)
+ mi.arch <- sprintf("%s/R/Occupancy_models/supplementary-methods-1.Rmd",script.dir)
+ knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE)
+
+ rmarkdown::render(mi.arch,"all")
+
+
+ for SPECIE in C.alector C.olivaceus C.paca C.thous C.unicinctus D.imperfecta D.kappleri D.leporina D.marsupialis D.novemcinctus E.barbara H.hydrochaeris L.pardalis L.rufaxilla L.tigrinus L.wiedii M.americana M.gouazoubira M.pratti M.tridactyla N.nasua O.virginianus P.concolor P.maximus P.onca P.tajacu S.venaticus T.major T.pecari T.terrestris T.tetradactyla
+ do
+    nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/presence-absence-dataframe.R $SPECIE &
+ done
+
+ for k in $(seq 1 4)
+ do
+   for SPECIE in C.alector C.olivaceus C.paca C.thous C.unicinctus D.imperfecta D.kappleri D.leporina D.marsupialis D.novemcinctus E.barbara H.hydrochaeris L.pardalis L.rufaxilla L.tigrinus L.wiedii M.americana M.gouazoubira M.pratti M.tridactyla N.nasua O.virginianus P.concolor P.maximus P.onca P.tajacu S.venaticus T.major T.pecari T.terrestris T.tetradactyla
+   do
+     nohup Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/single_visit_models.R $SPECIE $k &
+   done
+ done
+
+```
 
 Start interactive session with graphical session and test...
 ```sh
@@ -43,6 +100,9 @@ module add R/4.0.2
 
 
 ```
+
+
+#### References
 
 
 Goodness of fit and other steps adapted from chapter five of :
