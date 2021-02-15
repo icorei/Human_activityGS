@@ -15,4 +15,4 @@ cd $WORKDIR
 
 module add R/4.0.2
 
-Rscript --vanilla $SCRIPTDIR/R/Occupancy_models/occuRN-models.R
+Rscript --vanilla $SCRIPTDIR/R/occuRN-models.R
