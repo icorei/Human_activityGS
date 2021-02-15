@@ -193,11 +193,11 @@ mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
 ## ajustar modelos
 (fm01 <- occuRN(~ dras+sfrz+date ~ tree_1000m+dcon+drios, UMF,K=50)) # componente lineal
 (fm03 <- occuRN(~ dras+sfrz+date ~ tree_1000m+I(tree_1000m^2)+dcon+drios, UMF,K=50)) # componente cuadrátrico
-# save(file=mi.rda,UMF,fm01,fm03)
+ save(file=mi.rda,UMF,fm01,fm03)
 
 ## prueba de bondad de ajuste basado en bootstrap
 ts03 <- mb.gof.test(fm03,nsim=nsim.val,maxK=50,parallel = TRUE)
-# save(file=mi.rda,UMF,fm01,fm03,ts03)
+ save(file=mi.rda,UMF,fm01,fm03,ts03)
 
 ## ajustar modelos para todas las combinaciones de variables
 if (ts03$c.hat.est>1) {
@@ -211,7 +211,7 @@ if (ts03$c.hat.est>1) {
 ## promedios ponderados de los modelos
 mavg01 <- model.avg(oms01, subset = delta < 10,fit=T)
 mavg03 <- model.avg(oms03, subset = delta < 10,fit=T)
-# save(file=mi.rda,UMF,fm01,fm03,ts03,oms01,oms03)
+ save(file=mi.rda,UMF,fm01,fm03,ts03,oms01,oms03)
 
 ## renombrar archivos con el nombre de la especie
 for (k in c("UMF","fm01","fm03","ts03","oms01","oms03","mavg01","mavg03")) {

@@ -1,6 +1,6 @@
 ---
 title: "Shifting cultivation and hunting across the savanna-forest mosaic in the Gran Sabana, Venezuela"
-author: '@jrfep - @izolina - @adasanchez'
+author: 'JR Ferrer Paris @jrfep - Izabela Stachowicz @izolina - Ada Y. Sánchez Mercado @adasanchez'
 date: "29/1/2021"
 ---
 
