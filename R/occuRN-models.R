@@ -9,6 +9,9 @@
 ## PASO 2: ajuste del modelo
 #################
 
+init.time <- Sys.time()
+cat(sprintf("Inicio %s\n",init.time))
+
 
 ## Preliminares
 #################
@@ -194,10 +197,12 @@ mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
 (fm01 <- occuRN(~ dras+sfrz+date ~ tree_1000m+dcon+drios, UMF,K=50)) # componente lineal
 (fm03 <- occuRN(~ dras+sfrz+date ~ tree_1000m+I(tree_1000m^2)+dcon+drios, UMF,K=50)) # componente cuadrátrico
  save(file=mi.rda,UMF,fm01,fm03)
+ print(Sys.time())
 
 ## prueba de bondad de ajuste basado en bootstrap
 ts03 <- mb.gof.test(fm03,nsim=nsim.val,maxK=50,parallel = TRUE)
  save(file=mi.rda,UMF,fm01,fm03,ts03)
+ print(Sys.time())
 
 ## ajustar modelos para todas las combinaciones de variables
 if (ts03$c.hat.est>1) {
@@ -211,7 +216,8 @@ if (ts03$c.hat.est>1) {
 ## promedios ponderados de los modelos
 mavg01 <- model.avg(oms01, subset = delta < 10,fit=T)
 mavg03 <- model.avg(oms03, subset = delta < 10,fit=T)
- save(file=mi.rda,UMF,fm01,fm03,ts03,oms01,oms03)
+ save(file=mi.rda,UMF,fm01,fm03,ts03,oms01,oms03,mavg01,mavg03)
+ print(Sys.time())
 
 ## renombrar archivos con el nombre de la especie
 for (k in c("UMF","fm01","fm03","ts03","oms01","oms03","mavg01","mavg03")) {
@@ -222,3 +228,7 @@ save(file=mi.rda,list=ls(pattern=mi.spp))
 
 ## si se desea hacer el análisis para todas las especies en secuencia:
 ## } ## cerrar paréntesis de  `for (mi.spp  in levels(droplevels(eventos$species))) {`
+
+end.time <- Sys.time()
+cat(sprintf("Fin %s\n",end.time))
+print(end.time-init.time)
