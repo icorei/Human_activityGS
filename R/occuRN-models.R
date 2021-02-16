@@ -200,6 +200,7 @@ mi.rda <- sprintf("%s/Rdata/occuRN/%s.rda",script.dir,mi.spp)
  print(Sys.time())
 
 ## prueba de bondad de ajuste basado en bootstrap
+## con un nsim.val elevado -> usar parallel=TRUE y aumentar el número de procesadores en PBS 
 ts03 <- mb.gof.test(fm03,nsim=nsim.val,maxK=50,parallel = TRUE)
  save(file=mi.rda,UMF,fm01,fm03,ts03)
  print(Sys.time())
