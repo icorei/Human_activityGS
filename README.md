@@ -21,8 +21,3 @@ This repository includes the following folders:
 * *Rdata*: Contains R-data files with the raw observations and spatial data
 
 Each folder has a README file with instructions in English. Files in the documentation folder are written in English. Code in folders _env_, _pbs_ and _R_ include comments in Spanish and English.
-
-#### References
-
-
-* Strimas-Mackey, M., W.M. Hochachka, V. Ruiz-Gutierrez, O.J. Robinson, E.T. Miller, T. Auer, S. Kelling, D. Fink, A. Johnston. 2020. Best Practices for Using eBird Data. Version 1.0. https://cornelllabofornithology.github.io/ebird-best-practices/. Cornell Lab of Ornithology, Ithaca, New York. https://doi.org/10.5281/zenodo.3620739

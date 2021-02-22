@@ -571,7 +571,7 @@ Finally we decided to fit a full model including the three observation covariate
 (fm01 <- occuRN(~ dras+sfrz+date ~ tree_1000m+dcon+drios, UMF,K=50))
 ```
 
-Since a couple of species might be associated with shrub habitat with intermediate values of tree cover (Stachowicz et al. 2020) it could be desirable to add a quadratic term for tree cover to the model.
+Since a couple of species might be associated with shrub habitat with intermediate values of tree cover `r citep("Stachowicz_2020")` it could be desirable to add a quadratic term for tree cover to the model.
 
 ```{r quad-fit-final}
 (fm03 <- occuRN(~ dras+sfrz+date ~ tree_1000m+I(tree_1000m^2)+dcon+drios, UMF,K=50))
@@ -596,7 +596,7 @@ ts01
 
 For this species the model seem to be a good fit with no sign of over-dispersion. The estimate of $\hat{c}$ is well below 1, which might point to some degree of under-dispersion. I suspect this might be due to the heterogeneity in the sampling effort between cameras, with some cameras having very short periods with repeated visits. General practice is to ignore under-dispersion in model predictions (as long as it is not very extreme), and consider uncertainty estimates (standard deviation and confidence intervals) as rather conservative.
 
-For species with a suitable full model, we proceeded to create a model selection table with all combinations of covariates (32 models for species with linear effect of tree cover and 48 for species with quadratic effect of tree cover), ranked models according to information criteria corrected for small sample size (AICc if $\hat{c} \leq 1$ or QAICc if $\hat{c} > 1$ ), and the corresponding  delta(Q)AICc and model weights. Using the `dredge` function to fit all possible models. Following output only includes the first few models for readability.
+For species with a suitable full model, we proceeded to create a model selection table with all combinations of covariates (32 models for species with linear effect of tree cover and 48 for species with quadratic effect of tree cover), ranked models according to information criteria corrected for small sample size (AICc if $\hat{c} \leq 1$ or QAICc if $\hat{c} > 1$ ), and the corresponding  delta(Q)AICc and model weights. We use the `dredge` function to fit all possible models `r citep("10.5281/zenodo.3620739")`. Following output only includes the first few models for readability.
 
 ```{r oms,output.lines=c(1:15)}
 if (!exists("oms01"))
