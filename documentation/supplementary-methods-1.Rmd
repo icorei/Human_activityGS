@@ -3,10 +3,9 @@ title: "Latent abundance mixture models for mammals and birds in La Gran Sabana,
 author: "Ferrer-Paris, J.R.; Stachowicz, I; Sanchez-Mercado, A."
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
+bibliography: "references.bib"
 ---
 ```{r setup, include=FALSE}
-
-
 if (Sys.getenv("WORKDIR") == "") {
    ## for Izza:
    work.dir <- "D:/PROJECTS/Gran Sabana/Metodologia"
@@ -16,6 +15,31 @@ if (Sys.getenv("WORKDIR") == "") {
    work.dir <- Sys.getenv("WORKDIR")
    script.dir <- Sys.getenv("SCRIPTDIR")
 }
+library(knitr)
+hook_output <- knit_hooks$get("output")
+knit_hooks$set(output = function(x, options) {
+  lines <- options$output.lines
+  if (is.null(lines)) {
+    return(hook_output(x, options))  # pass to default hook
+  }
+  x <- unlist(strsplit(x, "\n"))
+  more <- "..."
+  if (length(lines)==1) {        # first n lines
+    if (length(x) > lines) {
+      # truncate the output, but add ....
+      x <- c(head(x, lines), more)
+    }
+  } else {
+    x <- c(more, x[lines], more)
+  }
+  # paste these lines together
+  x <- paste(c(x, ""), collapse = "\n")
+  hook_output(x, options)
+})
+library("knitcitations")
+cleanbib()
+options("citation_format" = "pandoc")
+read.bibtex(file="references.bib")
 
 ```
 
@@ -31,7 +55,7 @@ Then we run this process for all target species in a batch and present the summa
 
 We load up the R packages needed for the analysis and load the Rdata file with all the data.
 
-```{r}
+```{r packages, eval=TRUE, echo=TRUE,results="hide"}
 # load packages
 require(unmarked)
 require(AICcmodavg)
@@ -52,13 +76,13 @@ load(GIS.data)
 
 ### Sampling design and camera trap location
 
-We used data from a previous camera trap survey conducted between September 2015 – April 2016. The original sampling design was developed to optimize covering habitat diversity in order to evaluate how mammal species richness is related to habitat types, and is described in detail in Stachowicz et al. (2020), but we provide here a brief summary of the initial setting and how we adapted data a posteriori for our analysis. Sampling design comprised six $50 km^2$ blocks within the study area (B01 – B06) each one subdivided into 25 sampling units of $2 km^2$.
+We used data from a previous camera trap survey conducted between September 2015 – April 2016. The original sampling design was developed to optimize covering habitat diversity in order to evaluate how mammal species richness is related to habitat types, and is described in detail in `r citet("10.12933/therya-20-891")`, but we provide here a brief summary of the initial setting and how we adapted data a posteriori for our analysis. Sampling design comprised six $50 km^2$ blocks within the study area (B01 – B06) each one subdivided into 25 sampling units of $2 km^2$.
 
 The sampling universe included $N=150$ sampling units, but only 30 cameras were available, thus sampling was divided into three periods of 60-days each, and in each period a two-levels stratified random sampling was used to select 30 sampling units (five in each block) for camera deployment. This stratification ensures a balanced representation of sampling units with different coverage of habitat types and fragmentation in each block during each period. As a side effect of this, some sampling units with unique values within each block (for example cells with high tree cover within a block dominated by savanna) were selected for sampling in two or three periods and those cameras were neither relocated nor replaced.
 
 We filter the camera data and show their location in relation with the blocks 1 to 6 located in the eastern part of the Gran Sabana on the border of the Canaima National Park, circle size and colour is proportional to the time the camera was active (duration):
 
-```{r}
+```{r camara-data}
 
 camaras %>% filter(bloque %in% sprintf("B%02i",1:6)) %>%
   mutate(bloque=droplevels(bloque),
@@ -81,7 +105,7 @@ camaras %>% filter(bloque %in% sprintf("B%02i",1:6)) %>%
 
 We map the location of cameras in relation to the blocks
 
-```{r}
+```{r sampling-locations}
 sampling.design <- subset(grd,cuadrado %in% 1:6)
 
 map <- ggplot() +
@@ -96,9 +120,9 @@ map + theme_void() + coord_equal() +
 
 ### Vegetation / habitat types
 
-Blocks were selected to represent landscapes with different values of total forest cover ($h$) and landscape fragmentation index ($H$; Stachowicz et al. 2020) :
+Blocks were selected to represent landscapes with different values of total forest cover ($h$) and landscape fragmentation index ($H$) `r citep("10.12933/therya-20-891")`:
 
-```{r}
+```{r block-values}
 cam.data %>% select(bloque,H,h) %>% unique()
 ```
 
@@ -109,12 +133,12 @@ cam.data %>% select(bloque,grp) %>% table()
 ```
 
 
-Previous analysis suggested that most mammal species in the study area are associated with forest habitat and few are associated with shrubs or savanna (Stachowicz et al. 2020). We used mean tree cover (in percentage) as a quantitative variable correlated with these habitat types and consistent with metrics used for the sampling design.  Mean tree cover was calculated from remote sensing products (Hansen et al. 2003) using a 1 km buffer around the camera location, the variable has a bimodal distribution with a lower mode at 10-20% corresponding with the savanna, a higher mode at 70-80% corresponding with forest and intermediate values roughly corresponding with the less common shrub habitat.
+Previous analysis suggested that most mammal species in the study area are associated with forest habitat and few are associated with shrubs or savanna `r citep("10.12933/therya-20-891")`. We used mean tree cover (in percentage) as a quantitative variable correlated with these habitat types and consistent with metrics used for the sampling design.  Mean tree cover was calculated from remote sensing products `r citep("10.1126/science.1244693")` using a 1 km buffer around the camera location, the variable has a bimodal distribution with a lower mode at 10-20% corresponding with the savanna, a higher mode at 70-80% corresponding with forest and intermediate values roughly corresponding with the less common shrub habitat.
 
-These groups have different values of tree cover and vegetation indices estimated from remote sensors. We tested buffers with different radii. A $1 km$ radius is wide enough to represent the area of the most abundant game species home range (Cuniculus paca 2 - 3 ha, Jorge and Peres 2005; Dasyprocta leporina 3.4 - 1.6 ha, Benavides et al. 2017) and narrow enough to maintain variability in tree cover within the scale of a camera trapping site (Scotsont et al 2017). Increasing the radius implies more homogenous values and overlap between habitat types.
+These groups have different values of tree cover and vegetation indices estimated from remote sensors. We tested buffers with different radii. A $1 km$ radius is wide enough to represent the area of the most abundant game species home range (_Cuniculus paca_ 2 - 3 ha; _Dasyprocta leporina_ 3.4 - 1.6 ha) and narrow enough to maintain variability in tree cover within the scale of a camera trapping site. Increasing the radius implies more homogenous values and overlap between habitat types.
 
 
-```{r}
+```{r tree-cover}
 dat.m <- melt(cam.data,id.vars='grp', measure.vars=c('tree_0500m','tree_1000m','tree_2500m','tree_5000m'))
 
 ggplot(dat.m) +
@@ -146,7 +170,7 @@ The Pemón are the only indigenous people inhabiting the Gran Sabana. There are 
 
 We calculate the distance from each camera to the nearest community, blocks 1 and 5 are furthest away from the communities:
 
-```{r}
+```{r dcom}
 d1 <- pointDistance(cam.data[,c("lon","lat")],
   coordinates(comunidades), lonlat=T, allpairs=T)
 
@@ -160,14 +184,14 @@ ggplot(cam.data, aes(x=dcom,fill=bloque)) +
 
 During fieldwork we marked with a GPS the location of active and recently abandoned conucos (n=25) identified in situ and hunting sites (n=32) reported by interviewees and confirmed by the local guides.
 
-```{r}
+```{r hunting}
 table(coordinates((conucos))[,1]>-61.3) #
 table(cam.data$hunting)
 ```
 
 Distance from each camera to the nearest conuco was calculated using the GPS coordinates from cameras and conucos. This variable had an asymmetric distribution with a mean value of 1.58 km and a range from 0 to 8 km. We also recorded which cameras were located adjacent or near reported hunting sites (binomial variable hunting, FALSE n = 23, TRUE n = 34). Notice that three camaras are located in savanna habitat more than 5km from the nearest conuco.
 
-```{r}
+```{r dcon}
 d1 <- pointDistance(cam.data[,c("lon","lat")],
    coordinates(conucos)[,1:2], lonlat=T, allpairs=T)
 
@@ -182,7 +206,7 @@ labs(y="Distance to conucos (m)", x="Distance to communities (m)")
 
 As an alternative measure of the influence of conuco, we calculate density as $g(u) = (\sum w[i] )$ where the the weights are the inverse p-th powers of distance, $w[i] = 1/d(u,x[i])^p$ where $d(u,x[i])$ is the Euclidean distance from u to x[i].
 
-```{r}
+```{r wcon}
 
 p <- 0.25
 w <- 1/((d1)^p)
@@ -195,7 +219,7 @@ geom_point()
 
 We check their correlation
 
-```{r}
+```{r correlation-dcon}
 cam.data %>% select(dcon,wcon,dcom) %>% cor()
 # distance to conuco and density are neg. correlated
 with(cam.data,cor.test(dcon,wcon))
@@ -222,7 +246,7 @@ labs(y="Distance (m)", x="Forest cover (%)",colour="Hunting")
 
 We also recorded direct observations and indirect evidence (scats, tracks, scratches on trees, burrows, etc) of animal presence along the routes walked during field work, and recorded their coordinates with GPS. We had a total of n=159 records during 29 days of camera deployment and maintenance, with a mean of 16.8 km walked each day.
 
-```{r}
+```{r tracks}
 table(subset(eventos,bloque %in% sprintf("B%02i",1:6))$camara %in% "RAS")
 
 
@@ -253,7 +277,7 @@ labs(x="Density", y="Count")
 
 ### Summarizing detections from the camera trap survey
 
-Total sampling effort was 4,548 cameras per day, resulting in 7,466 captures, which translated into 771 detection events for mammals and 226 detection events for birds across 86 sampling units (Table 2 in Stachowicz et al., 2020). We identified mammal species (Eisenberg, 1989; Linares, 1998) and birds (Hilty, Tudor & Gwynne, 2003) using reference works for Venezuela and South America. We can summarize the number of events, fotos and individuals for each species:
+Total sampling effort was 4,548 cameras per day, resulting in 7,466 captures, which translated into 771 detection events for mammals and 226 detection events for birds across 86 sampling units (Table 2 in `r citet("10.12933/therya-20-891")`). We identified mammal species and birds  using reference works for Venezuela and South America. We can summarize the number of events, fotos and individuals for each species:
 
 ```{r}
 
@@ -323,7 +347,7 @@ make.obs.matrix <- function(x,y,w=NULL) {
 
 We set a start date on the 21 september 2015, and select visit duration to create the matrix of sampling effort and observations. Initially we used a visit duration of one week, but this yields a large matrix with several zeros (no observations) and *NAs* (camera inactive):
 
-```{r}
+```{r make-obs-matrix}
 
 ini <- chron(dates.="2015-09-21",times.="00:00:00",
   format = c(dates = "y-m-d", times = "h:m:s"))
@@ -334,9 +358,9 @@ table(obs,useNA='always')
 
 ```
 
-We test larger visit duration to balance the number of zeros in the observation matrix, but this also reduces the number of detections. In fact we are "degrading" the input data since we are aggregating all detections per combination of site/visit, so multiple events get reduced to a single value of "1" (Kery and Royle 2016).
+We test larger visit duration to balance the number of zeros in the observation matrix, but this also reduces the number of detections. In fact we are "degrading" the input data since we are aggregating all detections per combination of site/visit, so multiple events get reduced to a single value of "1" `r citep("https://www.elsevier.com/books/applied-hierarchical-modeling-in-ecology-analysis-of-distribution-abundance-and-species-richness-in-r-and-bugs/kery/978-0-12-801378-6")`.
 
-```{r}
+```{r compare-visits}
 visits2 <- ini + seq(from=0,to=210,by=14)
 visits3 <- ini + seq(from=0,to=210,by=21)
 visits4 <- ini + seq(from=0,to=210,by=28)
@@ -359,7 +383,7 @@ mtext('Sites (cameras)',2,outer=T)
 
 ## Model fitting
 
-For each species we fit a hierarchical Bernoulli/Poisson N‐mixture model (Royle–Nichols models, RN-models: Royle & Nichols, 2003) to evaluate how the probability of occupancy relates to forest cover and distance to conuco, allowing for abundance-induced heterogeneity in detection probability. RN‐models are based on the assumption that the detection probability at a survey point $p_{ij}$ depends on the species’ site‐specific abundance $N_i$:
+For each species we fit a hierarchical Bernoulli/Poisson N‐mixture model (Royle–Nichols models, RN-models: `r citep("10.1890/0012-9658(2003)084[0777:EAFRPA]2.0.CO;2")`) to evaluate how the probability of occupancy relates to forest cover and distance to conuco, allowing for abundance-induced heterogeneity in detection probability. RN‐models are based on the assumption that the detection probability at a survey point $p_{ij}$ depends on the species’ site‐specific abundance $N_i$:
 
 $p_{ij} = 1- (1 - r_{ij})N_i$
 
@@ -408,7 +432,7 @@ Now the site covariates. As site covariates we consider the following:
 * Track density (_dras_; this one is used as a spatial covariate of detectability)
 
 
-```{r}
+```{r site-covariates}
 sC <- data.frame(cam.data[match(rownames(obs),cam.data$cdg),
    c("bloque","H","h","dcon","dcom","wcon",
       "dhum","tree_0500m","tree_1000m","tree_2500m","tree_5000m","drios","ndvi","grp","dras","hunting")])
@@ -418,7 +442,7 @@ sC$bloque <- droplevels(sC$bloque)
 
 The continuous variables were standardized to zero mean and unit standard deviation:
 
-```{r}
+```{r standardize-covariates}
 for (k in c("H","h","dcon","dras","ndvi","tree_0500m","tree_1000m","tree_2500m","tree_5000m","drios","dcom","wcon","dhum")) {
    sC[,k] <- (sC[,k]-mean(sC[,k]))/sd(sC[,k])
 }
@@ -433,7 +457,7 @@ We select all camaras up to 5km from the conucos with total duration of at least
 
 Now everything together:
 
-```{r}
+```{r unmarked-frame}
 
 UMF <- unmarkedFrameOccu((obs[ss,]>0)+0,
   siteCovs=sC[ss,,drop=F],
@@ -445,7 +469,7 @@ UMF <- unmarkedFrameOccu((obs[ss,]>0)+0,
 
 First we check all possible combinations of covariates for detectability for a fixed null model of abundance:
 
-```{r}
+```{r fit-linear-model}
 fm00 <- occuRN(~ bloque+H+h+date+dras+sfrz ~ H+h+grp, UMF,K=50)
 if (!exists("all.combs.1"))
    all.combs.1 <- dredge(fm00,fixed=c("lam(grp)","lam(h)","lam(H)"))
@@ -454,7 +478,7 @@ sw(all.combs.1)
 ```
 This test suggest that _effort_ (_p(sfrz)_) is the detectability covariate with most support, and there is negligible support to covariate _blocks_, but the combination of _H_ or _h_ has moderate support. We check if this holds with a different covariate of abundance:
 
-```{r}
+```{r fit-tree}
  fm01 <- occuRN(~ bloque+H+h+date+dras+sfrz ~ tree_1000m, UMF,K=50)
 if (!exists("all.combs.2"))
    all.combs.2 <- dredge(fm01,fixed=c("lam(tree_1000m)"))
@@ -469,13 +493,13 @@ The best ranking models include those three variables:
 subset(all.combs.2,delta < 2)
 ```
 
-Given these results, we selected sampling date, sampling effort (camera/day), and density of direct and indirect off-camera records to account for spatial and temporal heterogeneity in detectability (Cubaynes et al., 2010, REFs).
+Given these results, we selected sampling date, sampling effort (camera/day), and density of direct and indirect off-camera records to account for spatial and temporal heterogeneity in detectability `r citep("10.1111/j.1523-1739.2009.01431.x")`.
 
 ### Build the model: covariates of abundance
 
 In order to compare the covariates of abundance, we take a slightly different approach, given the high correlation between variables related to habitat type and vegetation. We compare alternative models avoiding duplicate variables:
 
-```{r}
+```{r test-covariates-abundance}
 mdls <- list(
    "H+h" = occuRN(~ date+sfrz+dras~ H+h, UMF,K=50),
    "H+h+habitat" = occuRN(~ date+sfrz+dras~ H+h+grp, UMF,K=50),
@@ -498,7 +522,7 @@ aictab(mdls,second.ord=T)
 Model with tree cover at 1km is slightly better than other alternatives.
 
 Now rivers:
-```{r}
+```{r add-rivers}
 mdls <- list(
    "treecover 500m" = occuRN(~ date+sfrz+dras~ tree_0500m, UMF,K=50),
    "treecover 1k" = occuRN(~ date+sfrz+dras~ tree_1000m, UMF,K=50),
@@ -518,7 +542,7 @@ Rivers do not improve the fit (at least for this species) .
 
 Models for all different measures of human influence (conuco density, distance, distance to communities and combined conuco/community distance) provide very similar results when using one variable at a time.
 
-```{r}
+```{r test-human-influence}
 fm11 <- occuRN(~ date+sfrz+dras~ tree_1000m+dcom, UMF,K=50)
 fm12 <- occuRN(~ date+sfrz+dras~ tree_1000m+dcon, UMF,K=50)
 fm13 <- occuRN(~ date+sfrz+dras~ tree_1000m+wcon, UMF,K=50)
@@ -533,51 +557,79 @@ modnames=c("comunity","conuco (dist)","conuco (dens)","comunity/conuco combined"
 
 Distance to conuco is slightly  better than other measures, but there is a strong correlation between them:
 
-```{r}
+```{r correlation-variables}
 cor.test(cam.data$dcon,cam.data$tree_1000m)
 ```
 
 
 ## Goodness of fit test
 
-Finally we decided to fit a full model including the three observation covariates (p (date + effort + tracks_dens)) and the two site covariates ($\lambda$(tree_buffer + tree_buffer2 + dist_conuco)) using the occuRN function of the R package unmarked (Fiske & Chandler, 2011).
+Finally we decided to fit a full model including the three observation covariates (p (date + effort + tracks_dens)) and the two site covariates ($\lambda$(tree_buffer + tree_buffer2 + dist_conuco)) using the occuRN function of the R package unmarked `r citep(citation("unmarked"))`.
 
 
-```{r}
+```{r linear-fit-final}
 (fm01 <- occuRN(~ dras+sfrz+date ~ tree_1000m+dcon+drios, UMF,K=50))
 ```
 
 Since a couple of species might be associated with shrub habitat with intermediate values of tree cover (Stachowicz et al. 2020) it could be desirable to add a quadratic term for tree cover to the model.
 
-```{r}
+```{r quad-fit-final}
 (fm03 <- occuRN(~ dras+sfrz+date ~ tree_1000m+I(tree_1000m^2)+dcon+drios, UMF,K=50))
 ```
 
 In this case the quadratic terms does not seem to be informative:
-```{r}
+```{r aic-fits}
 AICc(fm01)
 AICc(fm03)
 ```
 
- We assessed model fit for the full model using goodness of fit test based on Pearson $\chi^2$ and parameter bootstrapping with 10,000 samples, and inspecting under- or overdispersion ($\hat{c}$, calculated by dividing the observed Chisq statistic by the mean of the statistics obtained from bootstrap samples), magnitude of parameter estimates and standard errors, and predicted values of the state variable at the sample locations (MacKenzie and Bailey 2004; Royle and Nichols 2016).
+ We assessed model fit for the full model using goodness of fit test based on Pearson $\chi^2$ and parameter bootstrapping with 10,000 samples, and inspecting under- or overdispersion ($\hat{c}$, calculated by dividing the observed  $\chi^2$ statistic by the mean of the statistics obtained from bootstrap samples), magnitude of parameter estimates and standard errors, and predicted values of the state variable at the sample locations `r citep(c("10.1198/108571104X3361"))`
 
 
-```{r}
+```{r ts01,output.lines=c(1:9,39:50)}
 nsim.val <- 100#00
 if (!exists("ts01"))
   ts01 <- mb.gof.test(fm01,nsim=nsim.val,maxK=50,parallel = TRUE)
 ts01
+## some lines of output omitted for readability
 ```
 
 For this species the model seem to be a good fit with no sign of over-dispersion. The estimate of $\hat{c}$ is well below 1, which might point to some degree of under-dispersion. I suspect this might be due to the heterogeneity in the sampling effort between cameras, with some cameras having very short periods with repeated visits. General practice is to ignore under-dispersion in model predictions (as long as it is not very extreme), and consider uncertainty estimates (standard deviation and confidence intervals) as rather conservative.
 
-```{r}
-(oms01 <- dredge(fm01,rank="AICc"))
+For species with a suitable full model, we proceeded to create a model selection table with all combinations of covariates (32 models for species with linear effect of tree cover and 48 for species with quadratic effect of tree cover), ranked models according to information criteria corrected for small sample size (AICc if $\hat{c} \leq 1$ or QAICc if $\hat{c} > 1$ ), and the corresponding  delta(Q)AICc and model weights. Using the `dredge` function to fit all possible models. Following output only includes the first few models for readability.
+
+```{r oms,output.lines=c(1:15)}
+if (!exists("oms01"))
+  oms01 <- dredge(fm01,rank="AICc")
+subset(oms01,delta<2)
+```
+
+
+
+We assessed the relative importance of each detection and occupancy covariate by calculating the sum of weights of the model containing that variable `r citep(c("10.1007/b97636","10.1007/s00265-010-1037-6"))`. Values range from zero to one indicating increasing levels of support, and we use an informal scale to describe the level of support as very strong (>0.9), strong (0.6 - 0.9), moderate (0.3 - 0.6) and low (<0.3).
+
+```{r sw}
+
 sw(oms01)
 
+```
+
+Model averages for models with delta AIC < 10:
+
+```{r mavg,output.lines=c(1:12,53:65)}
 mavg01 <- model.avg(oms01, subset = delta < 10,fit=T)
 summary(mavg01)
- cbind(coef(mavg01),confint(mavg01))
+## some lines of output omitted for readability
+```
+
+We further calculated model averaged coefficients and predictions of the state variable ($\lambda$)  based on the subset of models with $\Delta(Q)AICc \leq 10$ `r citep("10.1007/s00265-010-1029-6")`. In case of overdispersion ($\hat{c}>1$) we assumed the lack of fit is due to unaccounted sources of error and used the value of c to inflate the standard errors and confidence intervals. For underdispersed models ($\hat{c}<1$), no modification to standard errors or intervals was made, but consider these as conservative assessments of uncertainty `r citep("greycite417682")`. We also plot the results for visualization of trends:
+
+
+
+
+```{r mavg-plot}
+
+cbind(coef(mavg01),confint(mavg01))
 
 prd <-  predict(mavg01,type='state')
 ggplot(data=UMF@siteCovs,aes(x=tree_1000m,y=dcon,size=prd$fit,colour=prd$se.fit)) +
@@ -585,14 +637,12 @@ geom_point()
 
 ```
 
- For species with a suitable full model, we proceeded to create a model selection table with all combinations of covariates (32 models for species with linear effect of tree cover and 48 for species with quadratic effect of tree cover), ranked models according to information criteria corrected for small sample size (AICc if c1or QAICc if c>1), and the corresponding  delta(Q)AICc and model weights.
-
-We assessed the relative importance of each detection and occupancy covariate by calculating the sum of weights of the model containing that variable (Burnham and Anderson 2002; Symonds and Moussalli 2011). Values range from zero to one indicating increasing levels of support, and we use an informal scale to describe the level of support as very strong (>0.9), strong (0.6 - 0.9), moderate (0.3 - 0.6) and low (<0.3). We further calculated model averaged coefficients and predictions of the state variable ($\lambda$)  based on the subset of models with $\delta(Q)AICc \leq 10$ (Burnham et al 2011; Mazerolle 2020). In case of overdispersion (c>1) we assumed the lack of fit is due to unaccounted sources of error and used the value of c to inflate the standard errors and confidence intervals. For underdispersed models (c1), no modification to standard errors or intervals was made, but consider these as conservative assessments of uncertainty (Kery and Royle 2019).
-
-#### References
 
 
-
+# References
+```{r biblio,echo=FALSE, message=FALSE}
+write.bibtex(file="references2.bib")
+```
 <!--//
 Selection of hunting localities
 

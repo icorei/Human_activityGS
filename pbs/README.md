@@ -49,10 +49,10 @@ ssh -X $zID@katana.restech.unsw.edu.au
 
 source ~/proyectos/IVIC/Human_activityGS/env/load.sh
 cd $WORKDIR
-qsub -I -l select=1:ncpus=1:mem=8gb,walltime=1:00:00
+qsub -I -l select=1:ncpus=1:mem=16gb,walltime=1:00:00
 ## wait for job to be scheduled...
 cd $TMPDIR
-module add R/4.0.2
+module add R/4.0.2 texlive/2019
 source ~/proyectos/IVIC/Human_activityGS/env/load.sh
 
 Rscript -e "rmarkdown::render('~/proyectos/IVIC/Human_activityGS/documentation/supplementary-methods-1.Rmd',output_format='pdf_document')"

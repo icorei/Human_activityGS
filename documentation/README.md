@@ -12,7 +12,7 @@ require(knitr)
 script.dir <- Sys.getenv("SCRIPTDIR")
 knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE)
 
-for (mi.arch in sprintf("%s/R/Occupancy_models/supplementary-methods-%s.Rmd",script.dir,1:2)) {
+for (mi.arch in sprintf("%s/documentation/supplementary-methods-%s.Rmd",script.dir,1:2)) {
   rmarkdown::render(mi.arch,"all")
 }
 ```
