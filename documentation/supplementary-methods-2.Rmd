@@ -4,6 +4,7 @@ author: "Stachowicz, I; Ferrer-Paris, J.R.; Sanchez-Mercado, A. (in prep)"
 date: December 2, 2020
 output: pdf_document
 ---
+
 ```{r setup, include=FALSE}
 require(unmarked)
 require(AICcmodavg)

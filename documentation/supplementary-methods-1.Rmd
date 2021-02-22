@@ -589,6 +589,11 @@ geom_point()
 
 We assessed the relative importance of each detection and occupancy covariate by calculating the sum of weights of the model containing that variable (Burnham and Anderson 2002; Symonds and Moussalli 2011). Values range from zero to one indicating increasing levels of support, and we use an informal scale to describe the level of support as very strong (>0.9), strong (0.6 - 0.9), moderate (0.3 - 0.6) and low (<0.3). We further calculated model averaged coefficients and predictions of the state variable ($\lambda$)  based on the subset of models with $\delta(Q)AICc \leq 10$ (Burnham et al 2011; Mazerolle 2020). In case of overdispersion (c>1) we assumed the lack of fit is due to unaccounted sources of error and used the value of c to inflate the standard errors and confidence intervals. For underdispersed models (c1), no modification to standard errors or intervals was made, but consider these as conservative assessments of uncertainty (Kery and Royle 2019).
 
+#### References
+
+
+
+<!--//
 Selection of hunting localities
 
 To assess hunting behaviour of the Pemon we evaluated both the interview responses on vegetation type and season with contingency tables, and the spatial information on reported hunting sites with a logistic regression.
@@ -604,3 +609,4 @@ Kery and Royle 2016:
 > The RN model may be useful to estimate abundance from replicated measurements of presence/absence, to accommodate detection heterogeneity when focusing on occupancy (Dorazio,2007) or to link occupancy data with abundance data in an integrated model (Conroy et al., 2008)
 
 > In practice, the RN model has not been extensively used to actually estimate abundance. Arguably, it is more sensitive to parametric assumptions and it will fail when abundance and/or detection are high. Moreover, adopting mixture distributions other than the Poisson, such as the NB, leads to unstable estimates and often also to biologically unreasonably high estimates for abundanceHence, the RN model may be most useful as an occupancy model that accounts for part of the site-specific heterogeneity in detection (Dorazio, 2007) or in integrated models to link occupancy data with data that are directly informative about abundance (Conroy et al., 2008). Note also that Yamaura et al. (2011) have used it as the basis for their community models (Chapter 11).
+//-->
