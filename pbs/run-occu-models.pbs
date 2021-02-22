@@ -1,6 +1,10 @@
 #!/usr/bin/bash
 
+<<<<<<< HEAD
+#PBS -l select=1:ncpus=8:mem=32gb
+=======
 #PBS -l select=1:ncpus=16:mem=32gb
+>>>>>>> 689b16cda35bc07ef751394c399670319dde017f
 #PBS -l walltime=1:00:00
 #PBS -N occu-models
 #PBS -k eod
