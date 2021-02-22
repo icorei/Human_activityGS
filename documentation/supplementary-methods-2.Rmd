@@ -1,7 +1,7 @@
 ---
-title: "Test of garden hunting hypothesis for mammals in La Gran Sabana, Venezuela using occupancy models"
+title: "Latent abundance mixture models for mammals and birds in La Gran Sabana, Venezuela. Results for all species"
 author: "Stachowicz, I; Ferrer-Paris, J.R.; Sanchez-Mercado, A. (in prep)"
-date: December 2, 2020
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 ---
 

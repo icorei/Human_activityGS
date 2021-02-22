@@ -1,6 +1,6 @@
 # _pbs_ folder
 
-This folder contains a pbs file to set up a job array in a computing cluster using the PBS program. This code allow parallel computation of the models for all species. Alternatively the models can be fitted sequentially by editing the R-scripts in the [/R] folder.
+This folder contains a pbs file to set up a job array in a computing cluster using the [Portable Batch System](https://en.wikipedia.org/wiki/Portable_Batch_System) software. This code allow parallel computation of the models for all species. Alternatively the models can be fitted sequentially by editing the R-scripts in the [/R] folder.
 
 ## Workflow for Katana HPC @ UNSW
 
@@ -29,6 +29,8 @@ source ~/proyectos/IVIC/Human_activityGS/env/load.sh
 After fine tuning the script, I use PBS to schedule an *[array job](https://unsw-restech.github.io/using_katana/running_jobs.html#array-jobs)*:
 
 ```sh
+ssh -X $zID@katana.restech.unsw.edu.au
+
 source ~/proyectos/IVIC/Human_activityGS/env/load.sh
 cd $WORKDIR
 ls -lah $SCRIPTDIR/Rdata/occuRN
@@ -43,9 +45,11 @@ qstat -tu $(whoami)
 After completing all analysis, it is possible to render the rmarkdown documents in folder [/documentation] using an interactive session:
 
 ```sh
+ssh -X $zID@katana.restech.unsw.edu.au
+
 source ~/proyectos/IVIC/Human_activityGS/env/load.sh
 cd $WORKDIR
-qsub -I -X -l select=1:ncpus=1:mem=8gb,walltime=1:00:00
+qsub -I -l select=1:ncpus=1:mem=8gb,walltime=1:00:00
 ## wait for job to be scheduled...
 cd $TMPDIR
 module add R/4.0.2
