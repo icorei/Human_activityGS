@@ -1,6 +1,6 @@
 ---
 title: "Shifting cultivation and hunting across the savanna-forest mosaic in the Gran Sabana, Venezuela"
-author: 'JR Ferrer Paris @jrfep - Izabela Stachowicz @izolina - Ada Y. Sánchez Mercado @adasanchez'
+author: 'JR Ferrer Paris @jrfep - Izabela Stachowicz @icorei - Ada Y. Sánchez Mercado @adasanchez'
 date: "29/1/2021"
 ---
 
@@ -12,14 +12,12 @@ This repository contains data and code for the scientific manuscript _Shifting c
 
 ## Repository structure
 
-* *R* folder: Contains code (R scripts) for analysis (model fit)
-* *Rdata* folder: Contains R-data files with the raw observations and spatial data
-* *pbs* folder: PBS job files for running the R-code on the [Katana HPC](https://unsw-restech.github.io/index.html) @ [UNSW](https://github.com/unsw-edu-au)
+This repository includes the following folders:
+
 * *documentation*: R-markdown files and PDF output describing the model fit and analysis
+* *env*:
+* *pbs*: PBS job files for running the R-code on the [Katana HPC](https://unsw-restech.github.io/index.html) @ [UNSW](https://github.com/unsw-edu-au)
+* *R*: Contains code (R scripts) for analysis (model fit)
+* *Rdata*: Contains R-data files with the raw observations and spatial data
 
-Code comments are in Spanish and/or English.
-
-#### References
-
-Goodness of fit and other steps adapted from chapter five of :
-Strimas-Mackey, M., W.M. Hochachka, V. Ruiz-Gutierrez, O.J. Robinson, E.T. Miller, T. Auer, S. Kelling, D. Fink, A. Johnston. 2020. Best Practices for Using eBird Data. Version 1.0. https://cornelllabofornithology.github.io/ebird-best-practices/. Cornell Lab of Ornithology, Ithaca, New York. https://doi.org/10.5281/zenodo.3620739
+Each folder has a README file with instructions in English. Files in the documentation folder are written in English. Code in folders _env_, _pbs_ and _R_ include comments in Spanish and English.

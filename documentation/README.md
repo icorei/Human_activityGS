@@ -1,21 +1,26 @@
+# _documentation_ folder
 
-Processing r-markdown files in R / Para procesar los archivos r-markdown desde R:
+This folder contains R-markdown files with a mix of code and comments that can be rendered as a pdf-document for documentation of the analysis output.
 
-```{r}
+The PDF outputs are included as Supplementary Information of the main article.
 
- R --vanilla
- require(knitr)
- script.dir <- Sys.getenv("SCRIPTDIR")
- mi.arch <- sprintf("%s/documentation/supplementary-methods-2.Rmd",script.dir)
- knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE)
+To render the documents in R:
 
- rmarkdown::render(mi.arch,"all")
+```r
+#!R --vanilla
+require(knitr)
+script.dir <- Sys.getenv("SCRIPTDIR")
+knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE)
 
- mi.arch <- sprintf("%s/documentation/supplementary-methods-1.Rmd",script.dir)
- rmarkdown::render(mi.arch,"all")
-
- source(sprintf("%s/documentation/Figures.R",script.dir))
-
+for (mi.arch in sprintf("%s/documentation/supplementary-methods-%s.Rmd",script.dir,1:2)) {
+  rmarkdown::render(mi.arch,"all")
+}
 ```
 
-(Otherwise, use R-studio functions / O procesar directamente en R-studio)
+Alternatively, use `Rscript`:
+
+```sh
+Rscript -e "rmarkdown::render('~/proyectos/IVIC/Human_activityGS/documentation/supplementary-methods-1.Rmd',output_format='pdf_document')"
+```
+
+Or use knitr functions in `Rstudio`.
