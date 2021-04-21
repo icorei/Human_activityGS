@@ -39,7 +39,7 @@ knit_hooks$set(output = function(x, options) {
 library("knitcitations")
 cleanbib()
 options("citation_format" = "pandoc")
-read.bibtex(file="references.bib")
+bib <- read.bibtex(file=sprintf("%s/documentation/references.bib",script.dir))
 
 ```
 
@@ -368,7 +368,7 @@ table(obs,useNA='always')
 
 ```
 
-We test larger visit duration to balance the number of zeros in the observation matrix, but this also reduces the number of detections. In fact we are "degrading" the input data since we are aggregating all detections per combination of site/visit, so multiple events get reduced to a single value of "1" `r citep("https://www.elsevier.com/books/applied-hierarchical-modeling-in-ecology-analysis-of-distribution-abundance-and-species-richness-in-r-and-bugs/kery/978-0-12-801378-6")`.
+We test larger visit duration to balance the number of zeros in the observation matrix, but this also reduces the number of detections. In fact we are "degrading" the input data since we are aggregating all detections per combination of site/visit, so multiple events get reduced to a single value of "1" `r citep(bib["greycite417682"])`.
 
 ```{r compare-visits}
 visits2 <- ini + seq(from=0,to=210,by=14)

@@ -15,6 +15,14 @@ knitr::opts_chunk$set(warning = FALSE, echo = TRUE, eval = TRUE)
 for (mi.arch in sprintf("%s/documentation/supplementary-methods-%s.Rmd",script.dir,1:2)) {
   rmarkdown::render(mi.arch,"all")
 }
+
+```
+
+Additional output of figures for manuscript:
+
+```r
+source(sprintf("%s/documentation/Figures.R",script.dir))
+
 ```
 
 Alternatively, use `Rscript`:
@@ -24,3 +32,11 @@ Rscript -e "rmarkdown::render('~/proyectos/IVIC/Human_activityGS/documentation/s
 ```
 
 Or use knitr functions in `Rstudio`.
+
+## Notes on citations and references
+
+We are implementing citations using package `knitcitations`, some references had to be entered manually, for example this one might fail due to problems with the provider of the citation record:
+
+```{r}
+citep("https://www.elsevier.com/books/applied-hierarchical-modeling-in-ecology-analysis-of-distribution-abundance-and-species-richness-in-r-and-bugs/kery/978-0-12-801378-6")
+```
