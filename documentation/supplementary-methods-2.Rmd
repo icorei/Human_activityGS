@@ -1,7 +1,7 @@
 ---
 title: "Test of garden hunting hypothesis for mammals in La Gran Sabana, Venezuela using occupancy models"
 author: "Stachowicz, I; Ferrer-Paris, J.R.; Sanchez-Mercado, A. (in prep)"
-date: December 2, 2020
+date: April 21, 2021
 output: pdf_document
 ---
 ```{r setup, include=FALSE}
@@ -632,7 +632,7 @@ ccs  %>% filter(grepl('dcon',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full.
 ##ccs  %>% filter(grepl('drios',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full...F.) -> ss
 ##ccs  %>% filter(grepl('tree_1000m',rownames(ccs))) %>% dplyr::arrange(coef.mavg..full...F.) -> ss
 par(mar=c(4,8,3,1))
-plot(ss$coef.mavg.,1:nrow(ss),xlim=c(-3.8,3.8), pch=19,xlab=expression(hat(beta)),ylab='',axes=F,main='distance to nearest conuco')
+plot(ss$coef.mavg.,1:nrow(ss),xlim=c(-3.8,3.8), pch=19,xlab=expression(hat(beta)),ylab='',axes=F,main='Distance to nearest conuco')
 segments(ss$X2.5..,   1:nrow(ss),   ss$X97.5..,1:nrow(ss))
 axis(1)
 axis(2,1:nrow(ss),ss$spp,las=2,font=3)
@@ -726,10 +726,18 @@ theme(axis.text.x = element_text( size = 7, hjust = .5, vjust=.5, face = "italic
 
 ### Location of hunting sites
 
-Logistic regression (binomial glm) for reported hunting sites (hunting vs. no hunting) vs. habitat and conuco variables:
+Logistic regression (binomial glm) for reported hunting sites (hunting vs. no hunting) vs. habitat and conuco variables.
+
+Variables were standardized to zero mean and unit standard deviation:
 
 ```{r}
-mdl <- glm(hunting~tree_1000m+drios+dcom+dcon, data=cam.data,family=binomial)
+
+# cam.data %>% transmute(hunting=hunting,tree_1000m=tree_1000m/100,dist_river=drios/1e3,dist_comm=dcom/1e3,dist_conuco=dcon/1e3) -> cam.data.std
+
+g <- function(x) (x-mean(x))/sd(x)
+cam.data %>% transmute(hunting=hunting,tree_1000m=g(tree_1000m),dist_river=g(drios),dist_comm=g(dcom),dist_conuco=g(dcon)) -> cam.data.std
+
+mdl <- glm(hunting~tree_1000m+dist_river+dist_comm+dist_conuco, data=cam.data.std,family=binomial)
 summary(mdl)
 
 ```

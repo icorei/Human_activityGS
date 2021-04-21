@@ -1,7 +1,7 @@
 ---
 title: "Latent abundance mixture models for mammals and birds in La Gran Sabana, Venezuela"
 author: "Ferrer-Paris, J.R.; Stachowicz, I; Sanchez-Mercado, A."
-date: January 20, 2021
+date: April 21, 2021
 output: pdf_document
 ---
 ```{r setup, include=FALSE}
@@ -190,6 +190,16 @@ cam.data$wcon <- apply(w,1,sum)
 
 ggplot(cam.data,
   aes(y=wcon,x=dcon,colour=hunting,size=duration)) +
+geom_point()
+
+```
+
+We can visualise the pattern of density and distance:
+
+```{r}
+
+ggplot(cam.data,
+  aes(y=lat,x=lon,colour=sqrt(dcon),size=wcon)) +
 geom_point()
 ```
 
