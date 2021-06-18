@@ -4,11 +4,21 @@ author: 'JR Ferrer Paris @jrfep - Izabela Stachowicz @icorei - Ada Y. Sánchez M
 date: "29/1/2021"
 ---
 
-# Hunting in GS
+# Hunting in Gran Sabana, Venezuela
 
-This repository contains data and code for the scientific manuscript _Shifting cultivation and hunting across the savanna-forest mosaic in the Gran Sabana, Venezuela: Facing changes_ (under review)
+This repository contains data and code for the scientific manuscript _Shifting cultivation and hunting across the savanna-forest mosaic in the Gran Sabana, Venezuela: facing changes_ (Stachowicz et al. 2020)
 
-*Abstract* Overexploitation of bushmeat in tropical forests has increased in recent years, creating debate about the sustainability of current hunting rates. The Empty Forest hypothesis predicts that current hunting rates in tropical forests can lead to a widespread loss of biodiversity and a reduction in vertebrate abundance. Alternatively, the Garden Hunting hypothesis states that heterogeneous agroforestry landscapes maintain similar species richness as pristine forests, but with species composition dominated by savanna species. Here, we combined cameras trap surveys and spatially explicit dataset on Pemón indigenous hunting in mosaic of savanna and rainforest in the Gran Sabana, Venezuela.
+## Abstract
+*Background* Human encroachment and overexploitation of natural resources in the Neotropics is constantly increasing. Indigenous communities all across the Amazon, are trapped between a population rise and a hot debate about the sustainability of hunting rates. The Garden Hunting hypothesis states that shifting cultivation schemes (conucos) used by Amazon indigenous communities may generate favorable conditions, increasing abundance of small and medium wildlife species close to the ‘gardens’ providing game for indigenous hunters.
+
+*Methods* Here, we combined camera trap surveys and spatially explicit interview dataset on Pemón indigenous hunting scope and occurrence in a mosaic of savanna and forest in the Gran Sabana, Venezuela to evaluate to what extent the wildlife resource use corresponds to Garden Hunting hypothesis. We applied the Royle–Nichols model and binomial regression in order to: (1) assess whether abundance of small and medium wildlife species is higher close to conucos and (2) evaluate whether hunters select hunting localities based on accessibility to wildlife resources (closeness to conuco) more than wildlife abundance.
+
+*Results* We find mixed evidence supporting the Garden Hunting hypothesis predictions. Abundance of small and medium species was high close to conucos but the pattern was not statistically significant for most of them. Pemón seem to hunt in locations dominated by forest, where species abundance was predicted to be higher, than in close vicinity to conucos. Hunting scope was focused on the most abundant species located close to the conuco (Cuniculus paca), but also in less abundant and unavailable species (Crax alector, Tapirus terrestris and Odocoileus virginianus).
+
+*Conclusions* Our research provided the first attempt of a systematic sampling survey in the Gran Sabana, generating a quantitative dataset that not only describes the current pattern of wildlife abundance, but sets the base-line to monitor temporal and spatial change in this region of highland Amazon. We discuss the applicability of the estimates generated as a baseline as well as, environmental challenges imposed by economic, social and cultural changes such as mining encroachment for wildlife management.
+
+## Full citation:
+> Stachowicz I, Ferrer-Paris JR, Sanchez-Mercado A. 2021. _Shifting cultivation and hunting across the savannaforest mosaic in the Gran Sabana, Venezuela: facing changes_. *PeerJ* 9:e11612 DOI: [10.7717/peerj.11612](http://doi.org/10.7717/peerj.11612)
 
 ## Repository structure
 

@@ -397,7 +397,7 @@ For each species we fit a hierarchical Bernoulli/Poisson N‐mixture model (Royl
 
 $p_{ij} = 1- (1 - r_{ij})N_i$
 
-where $r_{ij}$ is the detection probability of a single individual. Repeated visits at a survey point generate a history of detection/nondetection events $y_{ij}$, from which $p_{ij}$  is estimated. The abundance state ($N_i$) of site $i$ was modeled as $N_i ~ Poison (\lambda_i)$, while the observation process was modeled as $y_{ij}/ N_i ~ Bernoulli (p_{ij} )$. Estimation of $p_{ij}$ allows us to draw conclusions about N_i.
+where $r_{ij}$ is the detection probability of a single individual. Repeated visits at a survey point generate a history of detection/nondetection events $y_{ij}$, from which $p_{ij}$  is estimated. The abundance state ($N_i$) of site $i$ was modeled as $N_i \sim Poison (\lambda_i)$, while the observation process was modeled as $y_{ij}/ N_i \sim Bernoulli (p_{ij} )$. Estimation of $p_{ij}$ allows us to draw conclusions about N_i.
 
 In order to build detection histories for species recorded during the camera trap survey, we considered each camera location as a “site” ($i$; 57 in total). We divided the total sampling period of 180 days into several ‘‘visits’’ ($j$). Here we use a visit duration of 21 days.
 
